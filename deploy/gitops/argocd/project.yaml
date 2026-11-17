@@ -1,0 +1,26 @@
+# Argo CD runs in each cluster and manages only that cluster. FraudShield apps may deploy only into the
+# fraudshield namespace, and only from this repository.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: fraudshield
+  namespace: argocd
+spec:
+  description: FraudShield services
+  sourceRepos:
+    - __REPO_URL__
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: fraudshield
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - { group: "", kind: ConfigMap }
+    - { group: "", kind: Service }
+    - { group: "", kind: ServiceAccount }
+    - { group: apps, kind: Deployment }
+    - { group: argoproj.io, kind: Rollout }
+    - { group: argoproj.io, kind: AnalysisTemplate }
+    - { group: networking.k8s.io, kind: Ingress }
+    - { group: networking.k8s.io, kind: NetworkPolicy }
+    - { group: policy, kind: PodDisruptionBudget }
+    - { group: keda.sh, kind: ScaledObject }

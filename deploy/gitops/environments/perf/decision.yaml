@@ -1,0 +1,5 @@
+autoscaling:
+  minReplicas: 8
+  maxReplicas: 40
+pdb:
+  minAvailable: 6

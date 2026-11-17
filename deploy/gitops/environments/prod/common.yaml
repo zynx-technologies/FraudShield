@@ -1,0 +1,2 @@
+# Prod: the canary in the chart defaults applies (5%, 25%, 100%), with automatic rollback.
+{}

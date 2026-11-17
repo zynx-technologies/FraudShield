@@ -1,0 +1,11 @@
+# Test: SIT and UAT, tokenised samples.
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 4
+pdb:
+  minAvailable: 0
+rollout:
+  steps:
+    - setWeight: 25
+    - pause: { duration: 5m }
+    - setWeight: 100

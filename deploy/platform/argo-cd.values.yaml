@@ -1,0 +1,18 @@
+# Argo CD, one per cluster, managing only its own cluster. No UI exposure: operators use
+# "az aks command invoke" or a Bastion jump host. Images come from the shared registry.
+global:
+  nodeSelector:
+    kubernetes.io/os: linux
+configs:
+  params:
+    server.insecure: false
+  cm:
+    timeout.reconciliation: 60s
+    admin.enabled: "false"
+server:
+  service:
+    type: ClusterIP
+dex:
+  enabled: false
+notifications:
+  enabled: false

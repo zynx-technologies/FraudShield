@@ -1,0 +1,9 @@
+# Local development: header sign-in and synthetic profiles.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.oauth2.server.resource.autoconfigure.web.OAuth2ResourceServerAutoConfiguration
+      - org.springframework.boot.security.oauth2.server.resource.autoconfigure.OAuth2ResourceServerAutoConfiguration
+fraudshield:
+  seed:
+    enabled: true

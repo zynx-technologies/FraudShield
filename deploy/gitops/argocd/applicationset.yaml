@@ -1,0 +1,64 @@
+# One Argo CD Application per service in this cluster. azure-pipelines/platform.yml fills in
+# __ENV__, __REGION__, and __REPO_URL__ when it installs this file.
+#
+# Configuration comes from main (reviewed by pull request). Release state - image tag, model version,
+# and Terraform outputs - comes from the "releases" branch, which only the pipelines write to.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fraudshield
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - service: decision
+          - service: case
+          - service: strategy
+          - service: copilot
+          - service: portal
+  template:
+    metadata:
+      name: "fraudshield-{{ .service }}"
+      labels:
+        fraudshield.io/environment: __ENV__
+        fraudshield.io/region: __REGION__
+    spec:
+      project: fraudshield
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: fraudshield
+      sources:
+        - repoURL: __REPO_URL__
+          targetRevision: main
+          path: deploy/helm/fraudshield-service
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - $main/deploy/gitops/services/{{ .service }}.yaml
+              - $main/deploy/gitops/environments/__ENV__/common.yaml
+              - $main/deploy/gitops/environments/__ENV__/{{ .service }}.yaml
+              - $releases/environments/__ENV__/platform-__REGION__.yaml
+              - $releases/environments/__ENV__/release.yaml
+              - $releases/environments/__ENV__/model.yaml
+        - repoURL: __REPO_URL__
+          targetRevision: main
+          ref: main
+        - repoURL: __REPO_URL__
+          targetRevision: releases
+          ref: releases
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=false
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m

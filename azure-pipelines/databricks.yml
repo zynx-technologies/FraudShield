@@ -1,0 +1,61 @@
+# Databricks Asset Bundle: data pipelines, feature jobs, training, and monitoring (design section 8).
+# Validates and deploys dev, then test. Perf and prod run when chosen.
+# Prod's workspace has no public access, so its stage runs on the private agent pool in the hub network.
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include: [databricks]
+pr: none
+
+parameters:
+  - name: includeProduction
+    displayName: Deploy perf and production after test
+    type: boolean
+    default: false
+
+variables:
+  - template: templates/variables.yml
+  - group: fraudshield-shared
+
+stages:
+  - ${{ each env in split('dev,test,perf,prod', ',') }}:
+      - ${{ if or(in(env, 'dev', 'test'), parameters.includeProduction) }}:
+          - stage: Bundle_${{ env }}
+            displayName: Deploy bundle to ${{ env }}
+            ${{ if eq(env, 'test') }}:
+              dependsOn: Bundle_dev
+            ${{ if eq(env, 'perf') }}:
+              dependsOn: Bundle_test
+            ${{ if eq(env, 'prod') }}:
+              dependsOn: Bundle_perf
+            variables:
+              - group: fraudshield-${{ env }}
+            jobs:
+              - deployment: Deploy
+                environment: fraudshield-${{ env }}
+                ${{ if eq(env, 'prod') }}:
+                  pool:
+                    name: fraudshield-private
+                ${{ else }}:
+                  pool:
+                    vmImage: ubuntu-24.04
+                strategy:
+                  runOnce:
+                    deploy:
+                      steps:
+                        - checkout: self
+                          fetchDepth: 1
+                        - task: AzureCLI@2
+                          displayName: Validate and deploy
+                          inputs:
+                            azureSubscription: fraudshield-azure
+                            scriptType: bash
+                            scriptLocation: inlineScript
+                            inlineScript: |
+                              set -euo pipefail
+                              curl -fsSL "https://raw.githubusercontent.com/databricks/setup-cli/v$(DATABRICKS_CLI_VERSION)/install.sh" | sh
+                              export DATABRICKS_HOST="$(DATABRICKS_HOST)" DATABRICKS_AUTH_TYPE=azure-cli
+                              cd databricks
+                              databricks bundle validate --target ${{ env }}
+                              databricks bundle deploy --target ${{ env }} --auto-approve

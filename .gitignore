@@ -1,0 +1,11 @@
+.terraform/
+*.tfplan
+tfplan
+plan-summary.md
+*.tfstate
+*.tfstate.*
+rendered-*.yaml
+kubeconform
+.databricks/
+__pycache__/
+*.pyc

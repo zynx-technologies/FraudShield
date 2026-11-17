@@ -1,0 +1,28 @@
+# Stand-in for the releases-branch values, used only by CI to render and validate the chart.
+global:
+  environment: ci
+  region: primary
+  imageTag: 0000000000000000000000000000000000000000
+  registry: example.azurecr.io
+  tenantId: 00000000-0000-0000-0000-000000000000
+  keyVaultUri: https://kv-example.vault.azure.net/
+  appInsightsConnectionString: InstrumentationKey=00000000-0000-0000-0000-000000000000
+  cosmosEndpoint: https://cosmos-example.documents.azure.com:443/
+  sqlHost: fog-example.database.windows.net
+  redisHost: redis-example.uksouth.redis.azure.net
+  eventHubsNamespace: evhns-example.servicebus.windows.net
+  signalrHost: sigr-example.service.signalr.net
+  aiEndpoint: https://ais-example.cognitiveservices.azure.com/
+  modelStorageUrl: https://exampleworm.blob.core.windows.net/models
+  apiClientId: 00000000-0000-0000-0000-0000000000aa
+  spaClientId: 00000000-0000-0000-0000-0000000000bb
+identities:
+  decision: 00000000-0000-0000-0000-000000000001
+  rules: 00000000-0000-0000-0000-000000000002
+  scoring: 00000000-0000-0000-0000-000000000003
+  case: 00000000-0000-0000-0000-000000000004
+  strategy: 00000000-0000-0000-0000-000000000005
+  copilot: 00000000-0000-0000-0000-000000000006
+  notification: 00000000-0000-0000-0000-000000000007
+model:
+  version: "14"

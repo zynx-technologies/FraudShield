@@ -1,0 +1,7 @@
+# Tool versions, pinned in one place. Update them through a pull request.
+variables:
+  TERRAFORM_VERSION: '1.15.8'
+  HELM_VERSION: '3.16.4'
+  TRIVY_VERSION: '0.58.1'
+  KUBECONFORM_VERSION: 'v0.6.7'
+  DATABRICKS_CLI_VERSION: '0.240.0'

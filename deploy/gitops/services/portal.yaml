@@ -1,0 +1,21 @@
+# Investigator portal: Angular static files served by unprivileged nginx on port 8080.
+serviceName: portal
+kind: static
+workloadIdentity: false
+ports:
+  http: 8080
+ingress:
+  enabled: true
+  paths: ["/"]
+portal:
+  dataLabel: ""
+  reportsUrl: ""
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { memory: 128Mi }
+rollout:
+  analysis:
+    enabled: false
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 4

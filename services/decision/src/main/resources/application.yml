@@ -1,0 +1,59 @@
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: decision
+  threads:
+    virtual:
+      enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ENTRA_ISSUER_URI:}
+          audiences: ${ENTRA_API_AUDIENCE:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          # Not ready until rules and thresholds are loaded from the strategy service.
+          include: readinessState,rules
+  metrics:
+    tags:
+      service: ${spring.application.name}
+fraudshield:
+  auth:
+    # Token scope for calls to other FraudShield services, for example api://<fraudshield-api client ID>/.default
+    service-scope: ${FRAUDSHIELD_SERVICE_SCOPE:}
+  services:
+    case-url: ${CASE_SERVICE_URL:http://localhost:8082}
+    strategy-url: ${STRATEGY_SERVICE_URL:http://localhost:8083}
+  scoring:
+    # baseline | rules-only | model. Set by the Helm chart from the released model version.
+    mode: ${FRAUDSHIELD_SCORING_MODE:baseline}
+    model-version: ${FRAUDSHIELD_MODEL_VERSION:}
+  features:
+    timeout: 25ms
+  alerts:
+    # STEP_UP decisions at or above this score also go to the analyst queue.
+    step-up-min-score: 70
+  fallback:
+    # Stricter channel limits used when scoring is unavailable (design section 4). Confirm with the fraud lead.
+    instant-hold-over: 1000
+    transfer-hold-over: 5000
+    card-step-up-over: 500
+  seed:
+    enabled: ${FRAUDSHIELD_SEED_ENABLED:false}

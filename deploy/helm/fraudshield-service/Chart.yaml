@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fraudshield-service
+description: One FraudShield service (decision, case, strategy, copilot, or portal) on AKS.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

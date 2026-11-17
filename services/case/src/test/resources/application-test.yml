@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:case-test;MODE=MSSQLServer;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+  flyway:
+    locations: classpath:db/migration
+
+fraudshield:
+  seed:
+    enabled: true
+  services:
+    decision-url: http://localhost:1

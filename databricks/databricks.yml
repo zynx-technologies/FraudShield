@@ -1,0 +1,43 @@
+# Databricks Asset Bundle for FraudShield data pipelines, feature jobs, training, and monitoring.
+# Design section 8: pipelines and jobs are deployed from Git, never edited by hand in the workspace.
+#
+# Jobs and pipelines go in resources/*.yml, with their code under src/. Deployed by
+# azure-pipelines/databricks.yml. The workspace host comes from DATABRICKS_HOST in each environment's
+# variable group, and the pipeline signs in with its Entra identity (azure-cli auth).
+bundle:
+  name: fraudshield
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for this environment.
+  event_hubs_namespace:
+    description: Event Hubs namespace that carries decision events.
+    default: ""
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: fraudshield_dev
+
+  test:
+    mode: production
+    variables:
+      catalog: fraudshield_test
+
+  perf:
+    mode: production
+    variables:
+      catalog: fraudshield_perf
+
+  prod:
+    mode: production
+    variables:
+      catalog: fraudshield_prod
+    # Jobs in production run as the pipeline's service principal, not as a person.
+    run_as:
+      service_principal_name: ${workspace.current_user.userName}

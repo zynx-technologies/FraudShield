@@ -1,0 +1,63 @@
+{{- if .Values.rollout.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "fs.name" . }}
+  labels:
+    {{- include "fs.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicas }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "fs.selector" . | nindent 6 }}
+  template:
+    {{- include "fs.podTemplate" . | nindent 4 }}
+  strategy:
+    canary:
+      stableService: {{ include "fs.name" . }}
+      canaryService: {{ include "fs.name" . }}-canary
+      {{- if .Values.ingress.enabled }}
+      trafficRouting:
+        nginx:
+          stableIngress: {{ include "fs.name" . }}
+      {{- end }}
+      {{- if .Values.rollout.analysis.enabled }}
+      analysis:
+        templates:
+          - templateName: {{ include "fs.name" . }}-canary
+        startingStep: 1
+        args:
+          - name: canary-hash
+            valueFrom:
+              podTemplateHashValue: Latest
+          - name: stable-hash
+            valueFrom:
+              podTemplateHashValue: Stable
+      {{- end }}
+      steps:
+        {{- toYaml .Values.rollout.steps | nindent 8 }}
+{{- else }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fs.name" . }}
+  labels:
+    {{- include "fs.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "fs.selector" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
+  template:
+    {{- include "fs.podTemplate" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,64 @@
+# Azure infrastructure. Merges that change infra/terraform plan and apply dev, then test.
+# Perf and prod run only when chosen by hand, and prod applies only after its reviewers approve.
+name: Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths: [infra/terraform/**]
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply (clear to plan only)
+        type: boolean
+        default: true
+      include_perf:
+        description: Include perf
+        type: boolean
+        default: false
+      include_prod:
+        description: Include production
+        type: boolean
+        default: false
+
+# One infrastructure run at a time. A queued run waits rather than cancelling one that is applying.
+concurrency:
+  group: infrastructure
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  dev:
+    uses: ./.github/workflows/_terraform.yml
+    with:
+      environment: dev
+      apply: ${{ github.event_name == 'push' || inputs.apply }}
+
+  test:
+    needs: dev
+    uses: ./.github/workflows/_terraform.yml
+    with:
+      environment: test
+      apply: ${{ github.event_name == 'push' || inputs.apply }}
+
+  perf:
+    needs: test
+    if: inputs.include_perf
+    uses: ./.github/workflows/_terraform.yml
+    with:
+      environment: perf
+      apply: ${{ inputs.apply }}
+
+  prod:
+    needs: [test, perf]
+    # Runs after perf when perf was chosen, otherwise straight after test.
+    if: >-
+      !cancelled() && inputs.include_prod && needs.test.result == 'success'
+      && contains(fromJSON('["success", "skipped"]'), needs.perf.result)
+    uses: ./.github/workflows/_terraform.yml
+    with:
+      environment: prod
+      apply: ${{ inputs.apply }}

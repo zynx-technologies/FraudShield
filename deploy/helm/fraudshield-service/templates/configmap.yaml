@@ -1,0 +1,61 @@
+{{- $g := .Values.global -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fs.name" . }}
+  labels:
+    {{- include "fs.labels" . | nindent 4 }}
+data:
+  FRAUDSHIELD_ENVIRONMENT: {{ $g.environment | quote }}
+  FRAUDSHIELD_REGION: {{ $g.region | quote }}
+  {{- if eq .Values.kind "java" }}
+  JAVA_TOOL_OPTIONS: {{ .Values.javaOpts | quote }}
+  SERVER_PORT: {{ .Values.ports.http | quote }}
+  MANAGEMENT_SERVER_PORT: {{ .Values.ports.management | quote }}
+  APPLICATIONINSIGHTS_CONNECTION_STRING: {{ $g.appInsightsConnectionString | default "" | quote }}
+  OTEL_SERVICE_NAME: {{ include "fs.name" . | quote }}
+  # Entra ID: services accept access tokens for fraudshield-api, and call each other with the same scope.
+  ENTRA_ISSUER_URI: {{ printf "https://login.microsoftonline.com/%s/v2.0" ($g.tenantId | default "") | quote }}
+  ENTRA_API_AUDIENCE: {{ $g.apiClientId | default "" | quote }}
+  FRAUDSHIELD_SERVICE_SCOPE: {{ printf "api://%s/.default" ($g.apiClientId | default "") | quote }}
+  # Service-to-service calls stay inside the cluster.
+  DECISION_SERVICE_URL: "http://decision"
+  CASE_SERVICE_URL: "http://case"
+  STRATEGY_SERVICE_URL: "http://strategy"
+  AZURE_KEYVAULT_URI: {{ $g.keyVaultUri | default "" | quote }}
+  FRAUDSHIELD_COSMOS_ENDPOINT: {{ $g.cosmosEndpoint | default "" | quote }}
+  FRAUDSHIELD_REDIS_HOST: {{ $g.redisHost | default "" | quote }}
+  FRAUDSHIELD_EVENTHUBS_NAMESPACE: {{ $g.eventHubsNamespace | default "" | quote }}
+  FRAUDSHIELD_SIGNALR_HOST: {{ $g.signalrHost | default "" | quote }}
+  AZURE_OPENAI_ENDPOINT: {{ $g.aiEndpoint | default "" | quote }}
+  {{- if .Values.database.enabled }}
+  # Azure SQL through the failover group listener, signed in with the service's workload identity.
+  DATABASE_URL: {{ printf "jdbc:sqlserver://%s:1433;database=fraudshield;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryDefault" ($g.sqlHost | default "") | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if eq .Values.kind "static" }}
+  # Read by nginx to serve /config.json to the portal.
+  ENTRA_TENANT_ID: {{ $g.tenantId | default "" | quote }}
+  ENTRA_SPA_CLIENT_ID: {{ $g.spaClientId | default "" | quote }}
+  ENTRA_API_SCOPE: {{ printf "api://%s/access_as_user" ($g.apiClientId | default "") | quote }}
+  FRAUDSHIELD_DATA_LABEL: {{ .Values.portal.dataLabel | quote }}
+  FRAUDSHIELD_REPORTS_URL: {{ .Values.portal.reportsUrl | quote }}
+  {{- end }}
+  {{- if .Values.model.enabled }}
+  {{- if .Values.model.version }}
+  FRAUDSHIELD_SCORING_MODE: "model"
+  FRAUDSHIELD_MODEL_NAME: {{ .Values.model.name | quote }}
+  FRAUDSHIELD_MODEL_VERSION: {{ .Values.model.version | quote }}
+  FRAUDSHIELD_MODEL_URL: {{ printf "%s/%s/%s/model.onnx" $g.modelStorageUrl .Values.model.name .Values.model.version | quote }}
+  {{- else }}
+  # No trained model released to this environment yet: the transparent baseline score is used.
+  FRAUDSHIELD_SCORING_MODE: "baseline"
+  {{- end }}
+  {{- with .Values.model.shadowVersion }}
+  FRAUDSHIELD_SHADOW_MODEL_VERSION: {{ . | quote }}
+  FRAUDSHIELD_SHADOW_MODEL_URL: {{ printf "%s/%s/%s/model.onnx" $g.modelStorageUrl $.Values.model.name . | quote }}
+  {{- end }}
+  {{- end }}
+  {{- range $k, $v := .Values.env }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

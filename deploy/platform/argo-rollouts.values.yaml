@@ -1,0 +1,6 @@
+controller:
+  replicas: 2
+  metrics:
+    enabled: true
+dashboard:
+  enabled: false

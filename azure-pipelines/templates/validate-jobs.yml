@@ -1,0 +1,96 @@
+# Pull request checks. No Azure access is needed.
+jobs:
+  - job: Terraform
+    displayName: Terraform format, validate, and security scan
+    steps:
+      - task: TerraformInstaller@1
+        inputs:
+          terraformVersion: $(TERRAFORM_VERSION)
+      - script: |
+          set -euo pipefail
+          cd infra/terraform
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate
+        displayName: Format and validate
+      - script: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/src" aquasec/trivy:$(TRIVY_VERSION) config \
+            --severity CRITICAL --exit-code 1 /src/infra/terraform
+          docker run --rm -v "$PWD:/src" aquasec/trivy:$(TRIVY_VERSION) config \
+            --severity HIGH --exit-code 0 /src/infra/terraform
+        displayName: Trivy IaC scan (fails on critical, reports high)
+
+  - job: Kubernetes
+    displayName: Helm lint and schema checks
+    steps:
+      - task: HelmInstaller@1
+        inputs:
+          helmVersionToInstall: $(HELM_VERSION)
+      - script: |
+          set -euo pipefail
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/$(KUBECONFORM_VERSION)/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
+          CHART=deploy/helm/fraudshield-service
+          for env in dev test perf prod; do
+            for svc in deploy/gitops/services/*.yaml; do
+              name="$(basename "$svc" .yaml)"
+              files=(-f "$svc" -f "deploy/gitops/environments/$env/common.yaml")
+              [[ -f "deploy/gitops/environments/$env/$name.yaml" ]] && files+=(-f "deploy/gitops/environments/$env/$name.yaml")
+              files+=(-f deploy/gitops/ci-fixture.yaml)
+              helm lint --strict "$CHART" "${files[@]}" > /dev/null
+              helm template "$name" "$CHART" "${files[@]}" > "rendered-$env-$name.yaml"
+            done
+          done
+          ./kubeconform -strict -summary \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            rendered-*.yaml deploy/platform/namespace.yaml
+        displayName: Render every service for every environment, then validate
+      - script: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/src" aquasec/trivy:$(TRIVY_VERSION) config \
+            --severity CRITICAL,HIGH --exit-code 1 /src/deploy/helm
+        displayName: Trivy Kubernetes misconfiguration scan
+
+  - job: Scripts
+    displayName: Pipeline scripts
+    steps:
+      - script: |
+          set -euo pipefail
+          shellcheck azure-pipelines/scripts/*.sh infra/bootstrap.sh
+          python3 -m py_compile azure-pipelines/scripts/*.py
+        displayName: shellcheck and Python syntax
+
+  - job: Services
+    displayName: Service tests (Java)
+    steps:
+      - task: JavaToolInstaller@1
+        inputs:
+          versionSpec: '21'
+          jdkArchitectureOption: x64
+          jdkSourceOption: PreInstalled
+      - script: |
+          set -euo pipefail
+          cd services
+          chmod +x mvnw
+          ./mvnw -B verify
+        displayName: Unit and API tests for decision, case, strategy, and copilot
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFiles: 'services/*/target/surefire-reports/*.xml'
+
+  - job: Portal
+    displayName: Portal tests and build
+    steps:
+      - task: UseNode@1
+        inputs:
+          version: '24.x'
+      - script: |
+          set -euo pipefail
+          cd portal
+          npm ci
+          npm audit --omit=dev --audit-level=high
+          CI=1 npx ng test --watch=false
+          npx ng build
+        displayName: Audit, test, and build

@@ -1,0 +1,14 @@
+# In-cluster Prometheus for canary analysis only. Operational monitoring uses Azure Monitor.
+alertmanager:
+  enabled: false
+prometheus-pushgateway:
+  enabled: false
+kube-state-metrics:
+  enabled: true
+prometheus-node-exporter:
+  enabled: false
+server:
+  retention: 2d
+  persistentVolume:
+    enabled: true
+    size: 20Gi

@@ -1,0 +1,105 @@
+# Reusable: plan one environment, then apply the saved plan.
+# Plan runs in the "fraudshield-<env>-plan" GitHub environment, which holds the Terraform inputs and has
+# no approvers. Apply runs in "fraudshield-<env>", whose required reviewers approve the plan they saw in
+# the run summary. Apply is skipped when the plan has no changes.
+name: Terraform environment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      apply:
+        type: boolean
+        default: true
+
+env:
+  TERRAFORM_VERSION: 1.15.8
+
+jobs:
+  plan:
+    name: Plan ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    environment: fraudshield-${{ inputs.environment }}-plan
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      has_changes: ${{ steps.terraform.outputs.PLAN_HAS_CHANGES }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform plan
+        id: terraform
+        run: azure-pipelines/scripts/terraform.sh plan "${{ inputs.environment }}"
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          UNIQUE_PREFIX: ${{ vars.UNIQUE_PREFIX }}
+          TF_STATE_RESOURCE_GROUP: ${{ vars.TF_STATE_RESOURCE_GROUP }}
+          TF_STATE_STORAGE_ACCOUNT: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          ACR_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+          TF_VAR_apim_publisher_email: ${{ vars.APIM_PUBLISHER_EMAIL }}
+          TF_VAR_sql_admin_group_name: ${{ vars.SQL_ADMIN_GROUP_NAME }}
+          TF_VAR_sql_admin_group_object_id: ${{ vars.SQL_ADMIN_GROUP_OBJECT_ID }}
+          TF_VAR_channel_source_cidrs: ${{ vars.CHANNEL_SOURCE_CIDRS || '[]' }}
+          TF_VAR_aks_admin_group_object_ids: ${{ vars.AKS_ADMIN_GROUP_OBJECT_IDS || '[]' }}
+          TF_VAR_alert_emails: ${{ vars.ALERT_EMAILS || '[]' }}
+          TF_VAR_origin_host_name: ${{ vars.ORIGIN_HOST_NAME }}
+          TF_VAR_origin_certificate_secret_id: ${{ vars.ORIGIN_CERTIFICATE_SECRET_ID }}
+          TF_VAR_entra_api_client_id: ${{ vars.ENTRA_API_CLIENT_ID }}
+          TF_VAR_entra_spa_client_id: ${{ vars.ENTRA_SPA_CLIENT_ID }}
+
+      # The plan can contain sensitive values, so it is kept for one day only.
+      - name: Save the plan
+        if: steps.terraform.outputs.PLAN_HAS_CHANGES == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}
+          path: infra/terraform/tfplan
+          retention-days: 1
+          if-no-files-found: error
+
+  apply:
+    name: Apply ${{ inputs.environment }}
+    needs: plan
+    if: inputs.apply && needs.plan.outputs.has_changes == 'true'
+    runs-on: ubuntu-24.04
+    environment: fraudshield-${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: write # publishes platform values to the releases branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}
+          path: ${{ runner.temp }}/tfplan
+
+      - name: Terraform apply and publish platform values
+        run: azure-pipelines/scripts/terraform.sh apply "${{ inputs.environment }}" "$RUNNER_TEMP/tfplan/tfplan"
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          UNIQUE_PREFIX: ${{ vars.UNIQUE_PREFIX }}
+          TF_STATE_RESOURCE_GROUP: ${{ vars.TF_STATE_RESOURCE_GROUP }}
+          TF_STATE_STORAGE_ACCOUNT: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          ACR_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+          AKS_CLUSTERS: ${{ vars.AKS_CLUSTERS }}
+          GITHUB_TOKEN: ${{ github.token }}

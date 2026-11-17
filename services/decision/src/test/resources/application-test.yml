@@ -1,0 +1,8 @@
+fraudshield:
+  seed:
+    enabled: true
+  events:
+    enabled: false
+  rules:
+    reload-enabled: false
+    required-for-readiness: true

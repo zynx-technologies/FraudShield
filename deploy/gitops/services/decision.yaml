@@ -1,0 +1,21 @@
+# Decision service: absolute rules, features, score, and policy for every payment (FR-1, FR-2, FR-3).
+# Rules and the model run in-process, so there is no network hop on the payment path (design section 17).
+serviceName: decision
+ingress:
+  enabled: true
+  paths: ["/api/v1/decisions"]
+model:
+  enabled: true
+  name: fs-txn
+resources:
+  requests: { cpu: "2", memory: 4Gi }
+  limits: { memory: 4Gi }
+rollout:
+  analysis:
+    decisionRates: true
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 30
+  cpuUtilization: "50"
+pdb:
+  minAvailable: 2

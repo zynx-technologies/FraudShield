@@ -1,0 +1,7 @@
+# Case service: alerts, queues, cases, outcomes, and the operations overview (FR-4, FR-5, FR-6).
+serviceName: case
+database:
+  enabled: true
+ingress:
+  enabled: true
+  paths: ["/api/v1/alerts", "/api/v1/cases", "/api/v1/overview"]

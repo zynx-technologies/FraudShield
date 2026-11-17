@@ -1,0 +1,100 @@
+# Defaults for every FraudShield service. Argo CD layers these files on top, in order:
+#   deploy/gitops/services/<service>.yaml              service shape (main branch)
+#   deploy/gitops/environments/<env>/<service>.yaml    environment sizing (main branch)
+#   environments/<env>/platform-<region>.yaml          Terraform outputs (releases branch, written by infra.yml)
+#   environments/<env>/release.yaml                    image tag (releases branch, written by app.yml)
+#   environments/<env>/model.yaml                      model version (releases branch, written by model-release.yml)
+
+serviceName: ""          # decision | case | strategy | copilot | portal
+kind: java               # java | static
+
+image:
+  repository: ""         # defaults to fraudshield-<serviceName>
+  pullPolicy: IfNotPresent
+
+replicas: 2
+
+# Workload identity. The client ID comes from identities.<serviceName> in the platform values.
+workloadIdentity: true
+
+ports:
+  http: 8080
+  management: 8081
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 2Gi
+  limits:
+    memory: 2Gi
+
+# Generational ZGC and pre-warming keep the JVM inside the latency budget (design section 4).
+javaOpts: "-XX:+UseZGC -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+
+env: {}
+
+probes:
+  startup: /actuator/health/liveness
+  liveness: /actuator/health/liveness
+  readiness: /actuator/health/readiness
+
+ingress:
+  enabled: false
+  paths: []              # e.g. ["/api/v1/decisions"]
+  className: nginx-internal
+  bodySize: 1m
+
+# Argo Rollouts canary. Each step waits, and analysis runs throughout. A failed analysis rolls back.
+rollout:
+  enabled: true
+  steps:
+    - setWeight: 5
+    - pause: { duration: 10m }
+    - setWeight: 25
+    - pause: { duration: 30m }
+    - setWeight: 100
+  analysis:
+    enabled: true
+    prometheusAddress: http://prometheus-server.monitoring.svc.cluster.local
+    maxErrorRate: "0.01"
+    maxP99Seconds: "0.2"
+    # Decision service only: alert (HOLD + BLOCK) and step-up rates may not move more than 25% from stable.
+    decisionRates: false
+    maxRateDrift: "0.25"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  cpuUtilization: "60"
+
+pdb:
+  minAvailable: 1
+
+nodeSelector:
+  fraudshield.io/pool: apps
+
+# Case and strategy use Azure SQL with their workload identity.
+database:
+  enabled: false
+
+# Portal only: shown next to page titles, and the Power BI link on the Reports screen.
+portal:
+  dataLabel: ""
+  reportsUrl: ""
+
+# Model run inside the decision service. Set by model-release.yml through model.yaml.
+model:
+  enabled: false
+  name: fs-txn
+  version: ""
+  # Challenger scored on live traffic with no effect on decisions (14-day shadow, design section 8).
+  shadowVersion: ""
+
+# Filled from the releases branch.
+global:
+  environment: ""
+  region: ""
+  imageTag: ""
+  registry: ""
+identities: {}

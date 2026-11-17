@@ -1,0 +1,64 @@
+# Azure infrastructure. Merges that change infra/terraform plan and apply dev, then test.
+# Perf and prod run only when chosen, and prod applies only after its approvers accept the plan.
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include: [infra/terraform]
+pr: none
+
+parameters:
+  - name: applyChanges
+    displayName: Apply (clear to plan only)
+    type: boolean
+    default: true
+  - name: includePerf
+    displayName: Include perf
+    type: boolean
+    default: false
+  - name: includeProduction
+    displayName: Include production
+    type: boolean
+    default: false
+
+variables:
+  - template: templates/variables.yml
+  - group: fraudshield-shared
+
+pool:
+  vmImage: ubuntu-24.04
+
+stages:
+  - template: templates/terraform-stages.yml
+    parameters:
+      environment: dev
+      apply: ${{ parameters.applyChanges }}
+
+  - template: templates/terraform-stages.yml
+    parameters:
+      environment: test
+      ${{ if parameters.applyChanges }}:
+        dependsOn: [Plan_dev, Apply_dev]
+      ${{ else }}:
+        dependsOn: [Plan_dev]
+      apply: ${{ parameters.applyChanges }}
+
+  - ${{ if parameters.includePerf }}:
+      - template: templates/terraform-stages.yml
+        parameters:
+          environment: perf
+          ${{ if parameters.applyChanges }}:
+            dependsOn: [Plan_test, Apply_test]
+          ${{ else }}:
+            dependsOn: [Plan_test]
+          apply: ${{ parameters.applyChanges }}
+
+  - ${{ if parameters.includeProduction }}:
+      - template: templates/terraform-stages.yml
+        parameters:
+          environment: prod
+          ${{ if parameters.applyChanges }}:
+            dependsOn: [Plan_test, Apply_test]
+          ${{ else }}:
+            dependsOn: [Plan_test]
+          apply: ${{ parameters.applyChanges }}

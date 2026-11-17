@@ -1,0 +1,17 @@
+# The FraudShield namespace: restricted pod security and default-deny networking.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fraudshield
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: fraudshield
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]

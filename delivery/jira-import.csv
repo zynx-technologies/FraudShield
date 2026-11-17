@@ -1,0 +1,1483 @@
+Issue Id,Parent,Issue Type,Summary,Description,Assignee,Reporter,Priority,Status,Story Points,Sprint,Labels,Labels,Labels,Labels,Labels,Labels
+E1,,Epic,Programme setup and governance,"Jira and Azure DevOps setup, open questions from section 18, risks, hiring, stakeholder sign-offs, and phase exit gates.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E2,,Epic,Azure landing zone and network,"Hub-and-spoke network in UK South and UK West: Azure Firewall, ExpressRoute, Bastion, Private DNS, Front Door + WAF, Application Gateway, and APIM networking.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E3,,Epic,CI/CD and DevOps platform,"Azure DevOps pipelines for infrastructure, cluster add-ons, application images, GitOps promotion, Databricks bundles, and model releases.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E4,,Epic,Operational data stores,"Azure Managed Redis, Cosmos DB, Azure SQL, and Event Hubs for the decision path.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E5,,Epic,Data platform and lakehouse,"ADLS Gen2, Delta Lake Bronze/Silver/Gold, Data Factory, Databricks, Unity Catalog, Purview, tokenisation, and data quality (FR-9).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E6,,Epic,Feature Store and online features,"Feature groups from section 6, point-in-time training sets, and sync to Redis and Cosmos DB.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E7,,Epic,Decision core,"Decision, rules, and scoring services: p99 under 200 ms, 2,000 TPS sustained and 5,000 at peak, with fallback rules (FR-1, FR-2, FR-3).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E8,,Epic,Case management and investigator portal,"Alerts, cases, SLAs, and the Angular portal screens (FR-4, FR-5, FR-6).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E9,,Epic,Case Copilot,"Grounded, cited case summaries through Microsoft Foundry, with no decision authority (FR-7).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E10,,Epic,Strategy and rules tooling,"Rule authoring, backtests, threshold simulation, and two-person approval (FR-8).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E11,,Epic,Models and MLOps,"fs-txn, fs-anomaly, and fs-mule models; MLflow and Unity Catalog registry; promotion gates; monitoring and retraining (FR-10).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E12,,Epic,Security and compliance,"PCI DSS scope, PRA and FCA operational resilience, UK GDPR, PSR APP-scam reimbursement, key management, segregation of duties, and penetration tests.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E13,,Epic,Testing and quality,"Test strategy, environment and data testing, functional and UAT, performance, and contract tests (section 14).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E14,,Epic,Observability and operations,"Logs, metrics, traces, alerts, dashboards, ServiceNow, and runbooks.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E15,,Epic,Resilience and multi-region,"Active-active decisions in two regions, failover under 5 minutes with no accepted decisions lost, and Chaos Studio tests.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+E16,,Epic,"Shadow run, rollout, and go-live","Full-volume shadow run, go-live criteria, and phased rollout one channel at a time (phases 5 and 6).",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,,,fraudshield,,,,,
+1,E1,Task,"Create the FS Jira project, import this backlog, and set up the board","Create the FraudShield (FS) Jira project, import jira-import.csv, create sprints 1 to 6, and set up the Scrum board with swimlanes per epic.
+
+Acceptance criteria:
+* All epics and issues imported with parent links
+* Sprints 1 to 6 exist with the dates in BACKLOG.md
+* All five team members can see and update the board
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,Sprint 1,fraudshield,setup,,,,
+2,E1,Task,"Request the Azure DevOps project, repository, and Azure subscriptions","Raise the requests for the FraudShield Azure DevOps project and Git repository, and for subscriptions (or management groups) for dev, test, perf, and prod. Nothing else in Azure can start until these exist.
+
+Acceptance criteria:
+* Azure DevOps project and repo exist and the code is pushed
+* Subscription IDs recorded for each environment
+* Anoop has Owner rights to run the bootstrap
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,Sprint 1,fraudshield,setup,blocker,,,
+3,E1,Task,Confirm the client and payment rails in scope (open question 1),"FraudShield now deploys to UK South and UK West, so section 18's assumption of an Australian bank becomes a UK bank with card, Faster Payments, and online transfers. The sponsor must confirm this, because it drives channel integration, mTLS certificates, and the rollout order.
+
+Acceptance criteria:
+* Sponsor decision recorded in Confluence or the ticket
+* In-scope rails listed with their channel owners
+* Design assumptions updated if different
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,Sprint 1,fraudshield,open-question,decision,,,
+4,E1,Task,Assess available labelled history: 24 months of transactions and outcomes (open question 2),"Section 18 assumes at least 24 months of transactions and outcomes. Section 16 rates poor or delayed labels as a high risk owned by Anoop. Find the sources for analyst outcomes, chargebacks, and scam claims, and estimate their coverage and lag.
+
+Acceptance criteria:
+* Sources, volumes, and date ranges documented
+* Label lag measured for chargebacks (up to 90 days) and claims
+* Go or no-go recommendation for Phase 3 modelling
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,Sprint 1,fraudshield,open-question,risk,spike,,
+5,E1,Task,Confirm device and behaviour signals supplied by the banking app (open question 3),"The device and session feature group depends on signals sent with each request: device age, remote-access signal, and new location. The channels lead must confirm what is available.
+
+Acceptance criteria:
+* List of available signals with field names
+* Gaps raised as risks
+* Decision API request contract updated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,2,Sprint 2,fraudshield,open-question,decision,,,
+6,E1,Task,Confirm the regulations and contracts that apply (open question 4),"The design was written for Australian regulation. For the UK deployment, compliance must confirm which obligations apply (PCI DSS; PRA SS1/21 and FCA SYSC 15A operational resilience; UK GDPR and the Data Protection Act 2018; the PSR APP-scam reimbursement rules; and the Money Laundering Regulations 2017 for AML escalation) and re-baseline design section 12.
+
+Acceptance criteria:
+* Applicable obligations listed by Compliance
+* Owner named for each obligation
+* Security epic E12 updated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 1,fraudshield,open-question,compliance,decision,,
+7,E1,Task,Agree whether tokenised case data may be sent to the language model (open question 5),"The design assumes only tokenised case data is sent, to a UK deployment. Security and Privacy must decide before the Copilot pilot.
+
+Acceptance criteria:
+* Security and Privacy decision recorded
+* Data allowed in prompts listed
+* Region and data residency confirmed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,2,Sprint 2,fraudshield,open-question,copilot,decision,,
+8,E1,Task,Build the Phase 1 Azure cost model (open question 6),"Estimate monthly run cost per environment from the Terraform SKUs: AKS node pools, APIM, Front Door Premium, Azure Firewall, ExpressRoute, Managed Redis, Cosmos DB multi-region, SQL, Event Hubs, Databricks, and Foundry. Code: infra/terraform/env/*.tfvars
+
+Acceptance criteria:
+* Cost per environment, with prod in two regions
+* Main cost drivers and savings options listed
+* Presented to the sponsor
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 2,fraudshield,open-question,cost,,,
+9,E1,Task,Coordinate hiring for the roles the team is missing,"Section 15 needs 2 ML engineers, 3 to 4 senior Java engineers, 1 to 2 Angular developers, 2 DevOps or SRE engineers, 1 security engineer, and part-time fraud strategist and model risk owner. Section 16 says hire before Phase 2 or use a specialist partner.
+
+Acceptance criteria:
+* Hiring plan with dates for each role
+* Partner option assessed for low-latency Java
+* Status reported in each sprint review
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,Sprint 1,fraudshield,risk,hiring,,,
+10,E1,Task,Set up the RAID log with the risks from section 16,"Record every risk from section 16 with impact, response, and owner, and review it at each sprint review.
+
+Acceptance criteria:
+* All eight design risks recorded with owners
+* Review cadence agreed
+* New risks from Sprint 1 added
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,2,Sprint 1,fraudshield,risk,,,,
+11,E1,Task,Agree the segregation-of-duties roster,"Rule authors, model authors, and approvers must be different people (section 12). Agree who holds each role so pipeline approvals and the strategy service can enforce it.
+
+Acceptance criteria:
+* Roster agreed by fraud, risk, and security leads
+* Approver groups created in Entra ID
+* Azure DevOps environment approvers match the roster
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,2,Sprint 3,fraudshield,compliance,sod,,,
+12,E1,Task,Phase 1 exit gate: security and data approval,"Phase 1 (Foundation) exits when security and data owners approve the landing zone, CI/CD, and labelled history.
+
+Acceptance criteria:
+* Evidence pack prepared: Terraform plans, network diagram, test results, label assessment
+* Security and data owners sign off
+* Phase 2 start confirmed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,Sprint 6,fraudshield,gate,,,,
+13,E1,Task,Set up sprint ceremonies and the stakeholder cadence,"Plan sprint planning, reviews, and retros, and a fortnightly update for fraud, risk, and security leaders.
+
+Acceptance criteria:
+* Calendar invites sent
+* Stakeholder list with contact owners
+* First sprint review booked
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,1,Sprint 1,fraudshield,setup,,,,
+14,E1,Task,Get stakeholder agreement on the proposed non-functional targets,"Section 1 says all targets are proposed until confirmed in Phase 1: p99 under 200 ms, 2,000 TPS sustained and 5,000 peak, 99.99% availability, failover under 5 minutes, 75% recall at 0.2% alert rate, and 7-year replay.
+
+Acceptance criteria:
+* Each target confirmed or changed by its owner
+* Changes reflected in test plans
+* Decision recorded
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,nfr,,,,
+15,E1,Task,"Coordinate vendor accounts: Microsoft, Databricks, and the ExpressRoute provider","Set up account contacts, support plans, and quota requests (AKS cores, Cosmos DB regions, Foundry model quota in UK South).
+
+Acceptance criteria:
+* Named contacts for each vendor
+* Quota requests raised
+* Support plan level confirmed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,2,Sprint 3,fraudshield,vendor,,,,
+16,E1,Task,Phase 2 readiness check: hires and partner in place,"The design says the decision path must not be built without senior low-latency Java experience. Confirm people are in place before Phase 2 work starts.
+
+Acceptance criteria:
+* Java and DevOps roles filled or partner contracted
+* Onboarding plan ready
+* Open role tickets reassigned
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,2,Sprint 6,fraudshield,gate,hiring,,,
+20,E2,Task,"Design the IP address plan for hub, app spoke, and data spoke in both regions","Allocate non-overlapping ranges for hub, decision and application spoke, and data and ML spoke, for dev, test, perf, and prod in UK South and UK West, leaving room for on-premises ranges over ExpressRoute. Code: infra/terraform/env/*.tfvars
+
+Acceptance criteria:
+* Address plan agreed with the bank network team
+* No overlap with on-premises ranges
+* tfvars updated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,Sprint 1,fraudshield,network,blocker,,,
+21,E2,Task,Review and apply the hub-network module to dev,"Hub VNet with Azure Firewall, Bastion, and Private DNS zones. Code: infra/terraform/modules/hub-network
+
+Acceptance criteria:
+* Plan reviewed and applied through infra.yml
+* Bastion reaches a test VM in each spoke
+* Firewall policy in place with deny by default
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 2,fraudshield,network,terraform,,,
+22,E2,Task,Review and apply the app-spoke and data-spoke modules with hub peering,"Decision and application spoke (AKS, APIM, private endpoints) and data and ML spoke (Databricks VNet-injected, Data Factory runtime). Code: infra/terraform/modules/app-spoke, infra/terraform/modules/data-spoke
+
+Acceptance criteria:
+* Both spokes peered to the hub
+* Subnets sized for AKS, APIM, Databricks host and container, and private endpoints
+* No public IPs outside the edge
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 2,fraudshield,network,terraform,,,
+23,E2,Task,Link Private DNS zones for all private endpoints,"Zones for Redis, Cosmos DB, SQL, Event Hubs, ADLS, Key Vault, ACR, Foundry, and Databricks, linked to hub and spokes.
+
+Acceptance criteria:
+* Every private endpoint resolves to a private IP from both spokes
+* No public resolution from inside the VNet
+* Zones managed by Terraform
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,network,,,,
+24,E2,Task,Route spoke egress through Azure Firewall,"User-defined routes send spoke egress to the firewall. Allow only the FQDNs AKS, Databricks, and the pipelines need.
+
+Acceptance criteria:
+* AKS nodes pull images and reach Azure APIs through the firewall
+* Denied traffic is logged
+* Allow-list documented
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 3,fraudshield,network,,,,
+25,E2,Task,Validate Databricks VNet-injection subnet sizing,"Check that host and container subnets support peak cluster sizes for streaming and training jobs.
+
+Acceptance criteria:
+* Maximum node count per subnet calculated
+* Subnet sizes confirmed or changed
+* Decision recorded
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,2,Sprint 2,fraudshield,network,databricks,spike,,
+26,E2,Task,Order ExpressRoute circuits for both regions,"Coordinate with the provider and the bank network team for circuits to UK South and UK West.
+
+Acceptance criteria:
+* Provider selected and order placed
+* Lead time recorded as a risk if it threatens Phase 2
+* Peering details shared with Sri Gowthami
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,vendor,expressroute,,,
+27,E2,Task,Design ExpressRoute connectivity to the payment switch and core banking,"Design private peering, gateways in the hub, route filters, and resilient paths for both regions.
+
+Acceptance criteria:
+* Design reviewed with the bank network team
+* Failover path between regions documented
+* Terraform change ready for when circuits arrive
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 4,fraudshield,network,expressroute,,,
+28,E2,Task,Apply the edge module: Front Door Premium and WAF for the portal,"Front Door Premium with WAF (DRS 2.1, bot rules, UK-only geo rule) in front of one Application Gateway per region. Application Gateway accepts traffic only from the AzureFrontDoor.Backend service tag, and Front Door checks the origin certificate. The module is created only when origin_certificate_secret_id is set. Code: infra/terraform/modules/edge
+
+Acceptance criteria:
+* Portal path reachable only through Front Door
+* WAF in prevention mode in test
+* Origin not reachable directly from the internet
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 4,fraudshield,network,edge,terraform,,
+29,E2,Task,Configure Application Gateway and APIM in internal mode,"APIM runs in internal VNet mode in the app spoke; Application Gateway publishes the portal and admin APIs. Code: infra/terraform/modules/apim, infra/terraform/modules/edge
+
+Acceptance criteria:
+* APIM gateway reachable only privately
+* Health probes green
+* Same-region private path for channels (20 ms budget)
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 4,fraudshield,network,apim,,,
+30,E2,Task,Set up mTLS for payment channels at API Management,"Validate channel client certificates at APIM, and design certificate issue and rotation with the channel teams.
+
+Acceptance criteria:
+* Requests without a valid client certificate are rejected
+* Certificate rotation runbook
+* Tested with a stub channel
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 5,fraudshield,network,security,FR-1,,
+31,E2,Task,Set up Private Link connectivity from the payment switch,"Design the private link path from the payment switch to API Management shown in Figure 5.
+
+Acceptance criteria:
+* Design agreed with the switch owner
+* Connection tested in test
+* Signed requests from the switch documented
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 5,fraudshield,network,,,,
+32,E2,Task,Apply the landing zone to the test environment,"Promote hub and spokes to test through infra.yml using env/test.tfvars.
+
+Acceptance criteria:
+* Test plan reviewed and applied
+* Connectivity checks pass
+* Differences from dev documented
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,network,terraform,,,
+33,E2,Task,Baseline NSGs and VNet flow logs across spokes,"Apply NSGs to every subnet and send flow logs to Log Analytics.
+
+Acceptance criteria:
+* Every subnet has an NSG
+* Flow logs visible in Log Analytics
+* Traffic analytics enabled
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 5,fraudshield,network,security,,,
+34,E2,Task,Assign Azure Policy guardrails for the landing zone,"Allowed regions (UK South and UK West), required tags, deny public network access on data services, and require private endpoints.
+
+Acceptance criteria:
+* Policies assigned at subscription scope
+* Existing resources compliant
+* Exemptions documented
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 5,fraudshield,governance,,,,
+17,E1,Task,Create the fraudshield-api and fraudshield-portal app registrations and app roles,"fraudshield-api: Application ID URI api://<client ID>, scope access_as_user, accessTokenAcceptedVersion 2, and app roles ANALYST, TEAM_LEAD, STRATEGIST, RISK_APPROVER, ML_ENGINEER, MODEL_RISK_OWNER, CHANNEL, and DECISION_ENGINE. Assign DECISION_ENGINE to the decision service's managed identity, and CHANNEL to the API Management identity. fraudshield-portal: single-page application granted access_as_user. Set ENTRA_API_CLIENT_ID and ENTRA_SPA_CLIENT_ID for Terraform. Code: services/common/.../security/Roles.java
+
+Acceptance criteria:
+* Both registrations exist with the eight app roles
+* Role groups mapped to the segregation-of-duties roster
+* Portal sign-in works in dev
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,Sprint 2,fraudshield,identity,blocker,,,
+18,E1,Task,Grant Azure SQL access to the case and strategy identities,"Run CREATE USER ... FROM EXTERNAL PROVIDER and grant db_datareader, db_datawriter, and db_ddladmin (for Flyway) to id-fraudshield-<env>-case and id-fraudshield-<env>-strategy, as the SQL admin group. Code: services/case and services/strategy migrations
+
+Acceptance criteria:
+* Both services start against Azure SQL
+* No SQL logins or passwords exist
+* Access reviewed by security
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,2,Sprint 3,fraudshield,sql,identity,,,
+19,E3,Task,Deploy the first-release services and portal to dev,"Build decision, case, strategy, copilot, and portal with app.yml and release them to dev. Check readiness: the decision service stays not-ready until it has loaded rules from strategy. Code: services, portal, deploy/gitops
+
+Acceptance criteria:
+* All five apps Synced and Healthy in Argo CD
+* A test payment through API Management reaches the alert queue
+* Portal screens load with Entra sign-in
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,gitops,first-run,,,
+39,E13,Task,Test the portal screens against the design mock-ups with Playwright,"End-to-end tests for the six screens in design section 9: overview, alert queue, case investigation, rules and thresholds, model monitoring, and release approval, including keyboard-only use (WCAG 2.2 AA). Code: portal
+
+Acceptance criteria:
+* One test per screen runs in CI against dev
+* Reason-required and self-approval rules covered
+* Accessibility checks pass
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 6,fraudshield,testing,portal,playwright,,
+111,E7,Story,Replace in-memory velocity and profile stores with Managed Redis and Cosmos DB,"The first release keeps counters and profiles in memory per pod. Move velocity counters to Azure Managed Redis (atomic, geo-replicated) and profiles to Cosmos DB, keeping the 25 ms timeout and safe defaults. Code: services/decision/.../features
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Counters are shared by every pod and both regions
+* p99 feature retrieval under 30 ms at 5,000 TPS
+* Timeouts fall back to defaults and flag reduced confidence
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,decision,phase-2,role-java-engineer,,
+112,E7,Story,Replace the in-memory event queue with the Cosmos DB outbox and Event Hubs,"Decisions, alerts, and counts are queued in memory in the first release, so a pod restart can lose them. Write each decision to the Cosmos DB outbox in-line and publish to Event Hubs afterwards; move idempotency keys to the same store. Code: services/decision/.../events
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* No accepted decision is lost when a pod or region fails
+* Idempotency holds across pods
+* Lakehouse receives every decision
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,decision,events,phase-2,role-java-engineer,
+113,E11,Story,Build the ONNX scorer with signed-model loading,"Scoring mode 'model' refuses to start in the first release, which uses the labelled fs-baseline-1 score instead. Load fs-txn from immutable storage, verify its signature, and run it with ONNX Runtime in-process. Code: services/decision/.../scoring
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Inference p99 under 15 ms
+* An unsigned or altered model is refused
+* Shadow version scored with no effect on decisions
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,decision,mlops,phase-3,role-java-engineer,
+114,E8,Story,Push live alert and SLA updates to the portal with Azure SignalR,"The first-release portal refreshes the queue and overview every 30 seconds. Push new alerts and SLA changes through Azure SignalR Service. Code: portal
+
+Owner: Angular Developer (not yet in the team).
+
+Acceptance criteria:
+* New alerts appear within 2 seconds
+* Falls back to polling if SignalR is unavailable
+* No customer data in SignalR messages
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,portal,phase-4,role-angular-developer,,
+115,E10,Story,Connect rule backtests to Databricks SQL,"The Backtest button returns 'not set up' in the first release. Run rule backtests against 30 days of history through the Databricks SQL API, and refresh score_distribution daily for the threshold simulator. Code: services/strategy
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Backtest result shown within 2 minutes
+* Simulator data refreshed daily
+* Queries run as a service principal
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,rules,phase-4,role-java-engineer,,
+116,E11,Task,Write release approvals to the Unity Catalog approval tag,"Approvals are recorded in the strategy service. The release pipeline reads approval.approved_by from Unity Catalog, so sync each approval there, and post gate evidence from the validation jobs to /api/v1/models/{model}/releases. Code: services/strategy/.../models
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Approval in the portal sets the tag
+* Gate evidence arrives without manual steps
+* model-release.yml passes the approval gate
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,mlops,phase-3,role-ml-engineer,,
+35,E3,Task,Set up the releases branch and build service permissions,"Pipelines write release state to the releases branch: image tags (app.yml), model versions (model-release.yml), and Terraform outputs (infra.yml). Give the project Build Service identity Contribute and Create branch on the repository, deny Contribute on releases to everyone else, and keep releases out of the CI trigger. Code: azure-pipelines/scripts/commit-release.sh
+
+Acceptance criteria:
+* Build service can push to releases
+* People cannot push to releases
+* Every change on releases links to the pipeline run that made it
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,Sprint 1,fraudshield,gitops,azure,blocker,,
+36,E3,Task,Create the fraudshield-private agent pool inside the network,"Production Databricks has no public access, so the prod stage of databricks.yml and the gate checks in model-release.yml run on an agent pool named fraudshield-private. Create a Managed DevOps Pool (or scale-set agents) in the primary data spoke, with private DNS resolution and egress through the firewall.
+
+Acceptance criteria:
+* Pool named fraudshield-private is online
+* Agents resolve and reach the private Databricks workspace
+* No public inbound access to the agents
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 5,fraudshield,network,ci,,,
+37,E2,Task,Issue the portal origin certificate and enable the edge,"Issue a certificate for the origin host name, import it into the environment Key Vault, and set ORIGIN_HOST_NAME and ORIGIN_CERTIFICATE_SECRET_ID in the variable group. Then add an APIM policy that accepts portal calls only with the X-Azure-FDID header equal to the front_door_id Terraform output.
+
+Acceptance criteria:
+* Certificate in Key Vault with a renewal owner
+* Edge module applied and portal_url works
+* Portal API calls without the Front Door ID are rejected
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,network,edge,certificates,,
+38,E3,Task,Record AKS_CLUSTERS and GITOPS_REPO_TOKEN in each environment variable group,"After the first apply, infra.yml prints the AKS_CLUSTERS value. Add it, and a read-only repository token for Argo CD as the secret GITOPS_REPO_TOKEN, to fraudshield-<env>. Rotate the token every 90 days until Argo CD uses workload identity for the repository.
+
+Acceptance criteria:
+* Both values set for dev and test
+* Token is read-only and stored as a secret
+* Rotation reminder created
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,1,Sprint 2,fraudshield,gitops,azure,,,
+40,E3,Task,Run the bootstrap script: Terraform state storage and geo-replicated registry,"Run infra/bootstrap.sh once in the shared subscription. It creates the state storage account and a Premium ACR replicated to UK West.
+
+Acceptance criteria:
+* State storage has no public blob access
+* ACR geo-replication to UK West
+* Output values stored in the fraudshield-shared variable group
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,Sprint 1,fraudshield,azure,blocker,,,
+41,E3,Task,Create the fraudshield-azure service connection with workload identity federation,"Federated service connection with no stored secrets, and the role assignments the README lists.
+
+Acceptance criteria:
+* Service connection verified
+* Roles scoped to FraudShield subscriptions
+* No client secret exists
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,Sprint 1,fraudshield,azure,blocker,,,
+42,E3,Task,Create variable groups and environments with approvals,"Variable groups fraudshield-shared and fraudshield-<env>; environments fraudshield-dev, -test, -perf, -prod. Prod approvers come from the segregation-of-duties roster.
+
+Acceptance criteria:
+* All groups and environments exist
+* Prod requires a named approver who is not the change author
+* Pipelines limited to main for apply
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,Sprint 1,fraudshield,azure,,,,
+43,E3,Task,Make ci.yml a required check on main,"Pull request validation: terraform fmt and validate, Trivy IaC and Kubernetes scans, helm lint and kubeconform for every service in every environment, shellcheck, and service tests. The Databricks bundle is validated by databricks.yml, because validation needs the workspace. Code: azure-pipelines/ci.yml
+
+Acceptance criteria:
+* Branch policy requires ci.yml to pass
+* Minimum one reviewer
+* Pipeline green on main
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,Sprint 1,fraudshield,ci,,,,
+44,E3,Task,"Add branch policy, PR template, and CODEOWNERS","CODEOWNERS routes network changes to Sri Gowthami, data changes to Priyanka, and pipeline changes to Anoop.
+
+Acceptance criteria:
+* CODEOWNERS file merged
+* PR template asks for test evidence
+* Reviewers added automatically
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,1,Sprint 1,fraudshield,ci,,,,
+45,E3,Task,"First run of infra.yml to dev, and fix what the first plan finds","Plan, approval, and apply for dev. Expect provider, quota, and naming issues on the first run. Code: azure-pipelines/infra.yml
+
+Acceptance criteria:
+* Dev plan reviewed and applied
+* Second plan shows no changes
+* Fixes merged through pull requests
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,Sprint 2,fraudshield,terraform,first-run,,,
+46,E3,Task,Install cluster add-ons on dev AKS with platform.yml,"Argo CD, Argo Rollouts, internal ingress-nginx, and Prometheus (for canary analysis) installed with az aks command invoke, because the cluster API is private. Third-party images are imported into the shared registry first, because AKS egress allows only the registry and Microsoft endpoints. KEDA, workload identity, and the Key Vault CSI driver are AKS add-ons set by Terraform. Code: azure-pipelines/platform.yml, azure-pipelines/scripts/install-platform.sh, deploy/platform
+
+Acceptance criteria:
+* All add-ons healthy
+* Argo CD reachable only privately
+* Re-running the pipeline makes no changes
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 3,fraudshield,aks,gitops,,,
+47,E3,Task,Apply the Argo CD AppProject and ApplicationSet,"One ApplicationSet per cluster creates an application per service. Configuration comes from main (deploy/gitops), and release state (image tag, model version, Terraform outputs) from the releases branch. Code: deploy/gitops/argocd
+
+Acceptance criteria:
+* ApplicationSet creates apps from the environment folder
+* AppProject restricts namespaces and repos
+* Sync status visible
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 3,fraudshield,gitops,,,,
+48,E3,Task,Deploy the Databricks Asset Bundle to dev,"Run azure-pipelines/databricks.yml for the dev target. Code: databricks/databricks.yml
+
+Acceptance criteria:
+* Bundle validates and deploys
+* Jobs owned by a service principal, not a person
+* Run as a pipeline, never from a laptop
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 3,fraudshield,databricks,ci,,,
+49,E3,Task,Prove app.yml end to end with a placeholder service,"Build one image, scan it with Trivy, write the tag to environments/dev/release.yaml on the releases branch, and wait for the Argo rollout to be healthy. Every service in the ApplicationSet needs an image, so start with placeholder images for services that have no code yet. Code: azure-pipelines/app.yml, deploy/helm/fraudshield-service
+
+Acceptance criteria:
+* Image built once and promoted by its commit-SHA tag
+* Canary steps 5%, 25%, 100% observed
+* Rollout aborts when the analysis fails
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 4,fraudshield,gitops,first-run,,,
+50,E3,Task,Promote infrastructure and the placeholder service to test,"Run infra.yml and app.yml for test.
+
+Acceptance criteria:
+* Test applied with no manual steps
+* Same image digest as dev
+* Smoke tests pass
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,terraform,gitops,,,
+51,E3,Task,Define pipeline quality gates,"Agree which results fail a build: unit tests, Trivy critical and high findings, SonarQube quality gate, and kubeconform errors.
+
+Acceptance criteria:
+* Gate thresholds documented
+* Gates enforced in ci.yml and app.yml
+* Exception process agreed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,quality,,,,
+52,E3,Task,Add SonarQube or GitHub Advanced Security to ci.yml,"Section 13 names GitHub Advanced Security or SonarQube. Choose one and add it to pull request validation.
+
+Acceptance criteria:
+* Tool chosen and recorded
+* Scan runs on every pull request
+* Quality gate blocks merges
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 4,fraudshield,security,ci,,,
+53,E3,Task,Write post-deployment smoke tests,"Smoke tests run after each environment deployment: health endpoints, APIM route, and private endpoint reachability. Code: azure-pipelines/scripts
+
+Acceptance criteria:
+* Smoke stage fails the pipeline on error
+* Results published to the run
+* Runs in dev and test
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,quality,smoke,,,
+54,E3,Task,Test the CI gates with failing pull requests,"Raise pull requests with a formatting error, an insecure Terraform resource, and an invalid Helm value, and confirm each one is blocked.
+
+Acceptance criteria:
+* Each failure blocks merge
+* Messages are clear enough to fix the problem
+* Gaps raised as tickets
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,2,Sprint 1,fraudshield,quality,,,,
+55,E3,Task,Pin tool versions and add pipeline caching,"Pin Terraform, Helm, kubeconform, Trivy, and Databricks CLI versions, and cache downloads.
+
+Acceptance criteria:
+* Versions set in one template
+* Pipeline time reduced
+* Upgrade process documented
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Low,To Do,2,Sprint 5,fraudshield,ci,,,,
+56,E3,Task,Hand pipeline ownership to the DevOps engineers,"Anoop owns the pipelines until DevOps engineers join. Hand over runbooks, environments, and approvals.
+
+Owner: DevOps Engineer (not yet in the team).
+
+Acceptance criteria:
+* Walkthrough completed
+* Environment admin rights moved
+* Release manager named
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,2,Sprint 6,fraudshield,handover,role-devops-engineer,,,
+57,E3,Task,Configure model-release.yml promotion gates,"Validation, fairness, p99 inference under 15 ms, 14-day shadow, approver not the author, then canary. Code: azure-pipelines/model-release.yml
+
+Acceptance criteria:
+* Each gate reads its evidence from MLflow or the monitoring report
+* Approval enforced in the fraudshield-prod environment
+* Failed gates stop the release
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,mlops,phase-3,,,
+58,E3,Task,Apply perf infrastructure in two regions,"Perf is synthetic data at production scale in UK South and UK West. Code: infra/terraform/env/perf.tfvars
+
+Acceptance criteria:
+* Perf applied through infra.yml
+* Both regions healthy
+* Cost tracked and environment can be scaled down
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,terraform,phase-5,,,
+59,E3,Task,First production infrastructure apply,"Production in two regions, applied manually with approval. Code: azure-pipelines/infra.yml
+
+Owner: DevOps Engineer (not yet in the team).
+
+Acceptance criteria:
+* Change approved through ServiceNow
+* Plan reviewed by a second person
+* Second plan shows no changes
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,terraform,phase-5,role-devops-engineer,,
+60,E4,Task,Review and apply the operational-data module to dev,"Azure Managed Redis, Cosmos DB, Azure SQL, and Event Hubs, all with private endpoints. Code: infra/terraform/modules/operational-data
+
+Acceptance criteria:
+* All four services private only
+* Managed identity access, no keys in config
+* Diagnostics sent to Log Analytics
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 2,fraudshield,terraform,data-stores,,,
+61,E4,Task,Design Cosmos DB containers and partition keys,"Containers for customer, device, and payee profiles, and the decisions outbox. Point reads and writes must fit the 30 ms budget.
+
+Acceptance criteria:
+* Partition keys chosen with expected hot-partition analysis
+* TTL and indexing policies defined
+* Terraform updated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 3,fraudshield,cosmos,,,,
+62,E4,Task,"Create Event Hubs, consumer groups, and capture settings","Hubs for decisions, device and login events, with consumer groups for streaming and reconciliation.
+
+Acceptance criteria:
+* Hubs and consumer groups in Terraform
+* Partition count sized for 5,000 TPS
+* Retention agreed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 3,fraudshield,event-hubs,,,,
+63,E4,Task,Define the decision event schema in Schema Registry,"The decision event carries decision ID, outcome, score, reason codes, model, ruleset, and feature versions, so each decision can be replayed for 7 years.
+
+Acceptance criteria:
+* Avro or JSON schema registered
+* Compatibility rule set to backward
+* Schema reviewed with Anoop
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 4,fraudshield,contracts,,,,
+64,E4,Task,Size Redis and set the eviction policy for velocity counters,"Counters for 1-hour, 24-hour, and 7-day windows per account must not be evicted under load.
+
+Acceptance criteria:
+* Memory estimate per million accounts
+* Eviction policy set to avoid counter loss
+* SKU confirmed per environment
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,2,Sprint 5,fraudshield,redis,,,,
+65,E4,Task,Set up Azure SQL database roles and the migration identity,"Separate identities for Flyway migrations and the case service, so the app cannot change append-only tables.
+
+Acceptance criteria:
+* Migration and runtime identities differ
+* case_event table is append-only for the runtime identity
+* Documented for the Java team
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 5,fraudshield,sql,security,,,
+70,E5,Task,Review and apply the lakehouse module to dev,"ADLS Gen2, immutable Blob Storage for signed models and audit exports, VNet-injected Databricks with access connector, and Data Factory. Code: infra/terraform/modules/lakehouse
+
+Acceptance criteria:
+* Storage accounts private only
+* Immutable container has a time-based retention policy
+* Databricks has no public IP
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 3,fraudshield,terraform,lakehouse,,,
+71,E5,Task,"Set up the Unity Catalog metastore, catalogs, and access model","One catalog per environment, with schemas for bronze, silver, gold, features, and models. Access by Entra groups.
+
+Acceptance criteria:
+* Metastore attached to the workspace
+* Groups for engineers, analysts, and ML mapped
+* No personal grants
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 4,fraudshield,unity-catalog,,,,
+72,E5,Task,Profile the historical data for the label assessment,"Supports FS-4. Profile transaction, outcome, and chargeback extracts: volumes, nulls, fraud rate, and date coverage.
+
+Acceptance criteria:
+* Profiling report shared with Anoop
+* Data quality issues listed
+* Fraud rate per channel estimated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 2,fraudshield,data,risk,spike,,
+73,E5,Task,Build a synthetic data generator for dev,"Dev uses synthetic data only. Generate transactions, devices, payees, and fraud patterns, including mule rings and scams, at a realistic fraud rate.
+
+Acceptance criteria:
+* Generator runs as a Databricks job
+* Output matches the decision API schema
+* Fraud rate configurable
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 1,fraudshield,data,synthetic,,,
+74,E5,Story,Stream decision events from Event Hubs into Bronze,"Structured Streaming job writes raw, immutable decision events to Bronze Delta tables.
+
+Acceptance criteria:
+* Job deployed through the bundle
+* Checkpointing survives a restart with no loss or duplicates
+* End-to-end lag under 60 seconds
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,Sprint 4,fraudshield,streaming,bronze,,,
+75,E5,Story,Tokenise card and account identifiers before Silver,"Card numbers and account identifiers must be tokenised before reaching Silver, keeping the platform out of PCI scope where possible.
+
+Acceptance criteria:
+* No clear card number in Silver or Gold
+* Tokenisation verified by an automated test
+* Approach reviewed by Security
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,Sprint 4,fraudshield,tokenisation,pci,,,
+76,E5,Story,Ingest core banking transactions with Data Factory,"Daily and historical loads from core banking into Bronze through the self-hosted integration runtime.
+
+Acceptance criteria:
+* Historical backfill for 24 months
+* Daily load scheduled
+* Row counts reconciled with the source
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 5,fraudshield,ingest,bronze,,,
+77,E5,Story,Ingest chargebacks with Data Factory,"Chargebacks provide confirmed labels and can arrive up to 90 days late.
+
+Acceptance criteria:
+* Chargebacks land in Bronze daily
+* Arrival date stored for label timing
+* Late-arriving records handled
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 5,fraudshield,ingest,labels,FR-9,,
+78,E5,Story,Enforce schema contracts at ingestion with a quarantine table,"Invalid events go to a quarantine table and raise an alert (section 6).
+
+Acceptance criteria:
+* Invalid records quarantined with a reason
+* Alert raised in Azure Monitor
+* Valid records not delayed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 5,fraudshield,data-quality,,,,
+79,E5,Story,Capture case outcomes from Azure SQL with CDC,"Analyst outcomes are fast labels. Capture outcome rows from the case database; corrections add a new row.
+
+Acceptance criteria:
+* Outcomes land in Bronze within minutes
+* Corrections kept as history
+* Tested with sample case data
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,Sprint 6,fraudshield,ingest,labels,FR-9,,
+80,E5,Story,"Reconcile daily decision counts across Cosmos DB, Event Hubs, and Bronze","Daily reconciliation from section 6 detects lost or duplicated decisions.
+
+Acceptance criteria:
+* Report written to Gold
+* Mismatch raises an alert
+* Runs as a scheduled bundle job
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 6,fraudshield,data-quality,,,,
+81,E5,Story,Build Silver conformed transactions and the Gold labels mart,"Join transactions with analyst, chargeback, and scam-claim labels, recording when each label was known. Unresolved recent transactions are excluded, not treated as genuine.
+
+Acceptance criteria:
+* Label-known date on every labelled row
+* Unresolved transactions excluded
+* Data tests pass
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,Sprint 6,fraudshield,silver,gold,labels,,
+82,E5,Story,Ingest device and login events from Event Hubs,"Device and login events feed the device and session features.
+
+Acceptance criteria:
+* Events land in Bronze
+* Schema contract enforced
+* Lag under 60 seconds
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 6,fraudshield,streaming,bronze,,,
+83,E5,Task,Set up Purview scans and lineage for ADLS and Unity Catalog,"Microsoft Purview and Unity Catalog govern the lakehouse (section 13).
+
+Acceptance criteria:
+* Scans scheduled
+* Sensitive fields classified
+* Lineage visible from Bronze to Gold
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 6,fraudshield,governance,,,,
+84,E5,Story,Publish Power BI fraud reports through Databricks SQL,"Fraud KPIs and rule performance through a Databricks SQL warehouse.
+
+Acceptance criteria:
+* SQL warehouse private
+* Report dataset refreshes daily
+* Row-level security by team
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,analytics,phase-4,,,
+90,E6,Task,"Design the Feature Store: groups, keys, and point-in-time rules","Feature groups from section 6: velocity, customer behaviour, payee, device and session, and graph. Definitions are reviewed in Git.
+
+Acceptance criteria:
+* Design document approved
+* Naming and versioning rules
+* Online and offline sources defined for each feature
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 6,fraudshield,feature-store,,,,
+91,E6,Story,Build velocity feature definitions for offline training,"Transaction count and value over 1 hour, 24 hours, and 7 days, matching the in-line Redis counters exactly.
+
+Acceptance criteria:
+* Same logic as the online counters
+* Point-in-time correct
+* Tests for window edges
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,features,phase-3,,,
+92,E6,Story,Build streaming customer behaviour features,"Amount compared with the 90-day median, usual hours, and channels. Refresh under 60 seconds.
+
+Acceptance criteria:
+* Freshness under 60 seconds
+* Null and range tests
+* Registered in the Feature Store
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,features,streaming,phase-3,,
+93,E6,Story,Build streaming payee features,"Payee age, number of incoming senders, and confirmed fraud reports. Refresh under 60 seconds.
+
+Acceptance criteria:
+* Freshness under 60 seconds
+* Registered in the Feature Store
+* Tested on synthetic mule patterns
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,features,streaming,phase-3,,
+94,E6,Story,Build hourly graph features with GraphFrames,"Shared devices, distance to confirmed fraud, and mule-ring score.
+
+Acceptance criteria:
+* Hourly job within its time budget
+* Features registered
+* Feeds fs-mule
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,8,,fraudshield,features,graph,phase-3,,
+95,E6,Story,Sync online features to Redis and Cosmos DB,"Push profile and streaming features to the online stores used by the decision service.
+
+Acceptance criteria:
+* Sync lag under 60 seconds
+* Writes are idempotent
+* Failures alert
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,features,online,phase-3,,
+96,E6,Story,Build point-in-time training sets with label timing,"Training examples record when their label was known, and use time-based splits.
+
+Acceptance criteria:
+* No future leakage in automated test
+* Training set versioned in Delta
+* Used by the fs-txn training job
+
+Source: FraudShield Solution Design Document, Draft 1.0.",priyanka.pothuraju@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,features,labels,phase-3,,
+97,E6,Task,Test online and offline feature agreement,"Compare served features with recalculated offline values. Skew blocks promotion (section 8).
+
+Acceptance criteria:
+* Skew report per feature
+* Threshold agreed
+* Wired into the model-release gate
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,testing,skew,phase-3,,
+100,E7,Task,"Prove the latency budget: Java 25, ZGC, in-process ONNX, p99 under 200 ms","Section 16 rates a missed latency target as high risk. Build a thin decision path and load test it early.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* p99 under 200 ms at 5,000 TPS on the perf cluster
+* Budget per step measured
+* Findings feed the AKS node and JVM settings
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,latency,risk,phase-2,spike,role-java-engineer
+101,E7,Story,Decision API with idempotency keys (FR-1),"POST /api/v1/decisions returns ALLOW, STEP_UP, HOLD, or BLOCK for card, instant, and online payments.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Repeat requests with the same Idempotency-Key return the same decision
+* Response includes model and ruleset versions and latency
+* Contract tests pass
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,decision,FR-1,phase-2,role-java-engineer,
+102,E7,Story,Absolute rules in Drools: sanctions and blocklists (FR-2),"Absolute rules run before any model and cannot be overridden by a score.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Sanctioned payee always BLOCK
+* Rules evaluated in under 10 ms
+* Rule version recorded on each decision
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,rules,FR-2,phase-2,role-java-engineer,
+103,E7,Story,Score with ONNX Runtime and return reason codes (FR-3),"Load signed models, score 0 to 99, and return up to five reason codes for alerts.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Inference p99 under 15 ms
+* Unsigned model files rejected
+* Model version on each decision
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,scoring,FR-3,phase-2,role-java-engineer,
+104,E7,Story,Policy thresholds and outcomes,"Compiled decision table: under 60 ALLOW, 60 to 79 STEP_UP, 80 to 98 HOLD, 99 and above BLOCK, plus rule overrides.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Thresholds configurable by approved ruleset
+* Policy step under 5 ms
+* Unit tests for every boundary
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,decision,phase-2,role-java-engineer,,
+105,E7,Story,Feature retrieval with a 25 ms timeout and safe defaults,"Parallel reads from Redis and Cosmos DB. On timeout, score with defaults and flag reduced confidence.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Timeout enforced
+* Reduced-confidence flag on the decision
+* Warning alert raised
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,decision,resilience,phase-2,role-java-engineer,
+106,E7,Story,Fallback to rules only when scoring fails,"If the scoring engine fails, apply stricter limits by channel. Critical alert.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Fallback tested by killing the scorer
+* Channel limits configurable
+* Critical alert fires
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,,fraudshield,decision,resilience,phase-2,role-java-engineer,
+107,E7,Story,"Decision outbox in Cosmos DB, published to Event Hubs","Write the decision to the outbox within the 30 ms budget, then publish. If Event Hubs is unavailable, decisions wait in the outbox.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* No accepted decision is lost when Event Hubs is down
+* Publisher retries in order
+* Reconciliation finds no gaps
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,decision,outbox,phase-2,role-java-engineer,
+108,E7,Story,Live reload of versioned rules,"Approved rulesets reload without a restart.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Reload does not drop requests
+* Rollback to the previous ruleset
+* Ruleset version on each decision
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,rules,phase-2,role-java-engineer,,
+109,E7,Task,"Helm values for the decision, rules, and scoring services","Canary analysis on latency and alert rate, KEDA scaling, pre-warmed pods, and PDB. Code: deploy/gitops/environments/<env>/decision.yaml
+
+Acceptance criteria:
+* Values reviewed with the Java lead
+* Canary analysis thresholds agreed
+* Pods pre-warmed before receiving traffic
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,helm,phase-2,,,
+110,E7,Task,Publish the decision API in APIM with throttling and routing,"API definition, per-channel rate limits, and routing to the active region.
+
+Acceptance criteria:
+* Policy as code
+* Per-channel throttling tested
+* Latency at APIM measured for the p99 target
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,apim,phase-2,,,
+120,E8,Story,"Case service: alerts, queues, assignment, and SLAs (FR-4)","One alert per suspicious decision, grouped into cases. Tables alert, fraud_case, case_event, outcome.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* A case cannot close without an outcome
+* case_event is append-only
+* SLA timers tracked
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,case,FR-4,phase-4,role-java-engineer,
+121,E8,Story,Confirm fraud or release a payment with a required reason (FR-5),"Analyst actions record a reason and feed training labels.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Reason required
+* Outcome feeds the labels pipeline
+* Action audited
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,case,FR-5,phase-4,role-java-engineer,
+122,E8,Story,Alert queue screen,"AG Grid queue ordered by risk and time remaining, with live updates from Azure SignalR Service.
+
+Owner: Angular Developer (not yet in the team).
+
+Acceptance criteria:
+* New alerts appear without refresh
+* Full keyboard use
+* Masked data by default
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,portal,phase-4,role-angular-developer,,
+123,E8,Story,Case investigation screen with linked entities (FR-6),"Transaction, model reasons, Cytoscape.js graph of accounts, devices, and payees, the Copilot draft, and actions.
+
+Owner: Angular Developer (not yet in the team).
+
+Acceptance criteria:
+* Graph shows links to confirmed fraud
+* Reveal of masked data is audited
+* WCAG 2.2 AA
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,portal,FR-6,phase-4,role-angular-developer,
+124,E8,Story,Fraud operations overview dashboard,"Volume, queue pressure, service levels, and platform health in ECharts.
+
+Owner: Angular Developer (not yet in the team).
+
+Acceptance criteria:
+* Matches the design mock-up
+* Data refreshes live
+* Team lead role only
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,portal,phase-4,role-angular-developer,,
+125,E8,Story,Portal sign-in with MSAL and Entra ID roles,"Analyst, team lead, strategist, ML, and model risk roles.
+
+Owner: Angular Developer (not yet in the team).
+
+Acceptance criteria:
+* Each screen limited by role
+* MFA enforced by Entra
+* Session timeout agreed with Security
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,portal,identity,phase-4,role-angular-developer,
+126,E8,Story,Notification service for alerts and SLA messages,"Azure Communication Services and SignalR for alert and SLA changes.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* SLA breach warnings sent
+* No customer data in messages
+* Delivery failures logged
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,notification,phase-4,role-java-engineer,,
+127,E8,Task,Playwright suite for alert handling and case workflows,"Functional tests for queue, investigation, release, and confirm-fraud flows.
+
+Acceptance criteria:
+* Runs in app.yml after deployment to test
+* Covers FR-4, FR-5, FR-6
+* Results linked to Jira
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,testing,playwright,phase-4,,
+128,E8,Task,Accessibility testing to WCAG 2.2 AA,"Automated and manual checks, including keyboard-only use for analysts.
+
+Acceptance criteria:
+* Automated axe checks in CI
+* Manual keyboard test of every screen
+* No open AA failures
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,testing,accessibility,phase-4,,
+129,E8,Task,UAT with fraud analysts and team leads,"Phase 4 exit gate is analyst acceptance.
+
+Acceptance criteria:
+* UAT scripts approved by the fraud lead
+* Defects triaged
+* Sign-off recorded
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,testing,uat,phase-4,,
+135,E9,Task,Apply the ai module: Foundry and Content Safety in UK South with a private endpoint,"Code: infra/terraform/modules/ai. Only after FS-7 is decided.
+
+Acceptance criteria:
+* Private endpoint only
+* UK region
+* Managed identity access
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,terraform,ai,phase-4,,
+136,E9,Story,Grounded case summaries with citation validation (FR-7),"Spring AI reads only the current case's tokenised evidence. Every statement must cite a source; it has no tools that change a case and cannot recommend a final decision.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Uncited statements removed or the draft rejected
+* No write tools
+* Kill switch to turn it off
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,copilot,FR-7,phase-4,role-java-engineer,
+137,E9,Task,Build the reviewed Copilot evaluation set,"A reviewed set of cases to test accuracy, omissions, and hallucinations.
+
+Acceptance criteria:
+* At least 100 reviewed cases
+* Scoring rubric agreed
+* Stored in Git with prompts
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,copilot,testing,phase-4,,
+138,E9,Task,Prompt-injection tests with merchant names and payment descriptions,"Merchant names and descriptions are untrusted text.
+
+Acceptance criteria:
+* Injection cases in the evaluation set
+* No instruction in data changes behaviour
+* Results reviewed by Security
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,copilot,security,phase-4,,
+139,E9,Task,Add the Copilot evaluation stage to the pipeline,"Prompt and model changes run the evaluation set before release.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Pipeline fails below agreed scores
+* Results stored per release
+* Prompts versioned in Git
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,,fraudshield,copilot,ci,phase-4,role-ml-engineer,
+145,E10,Story,Rule authoring and backtests through Databricks SQL (FR-8),"Strategists create rules and backtest them on historical data.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Backtest shows recall and alert rate change
+* Rule versions stored in rule_version
+* Results saved with the proposal
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,strategy,FR-8,phase-4,role-java-engineer,
+146,E10,Story,Two-person approval for rules and thresholds,"The author and the approver must differ.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Self-approval rejected
+* Approval audited
+* Approved ruleset reloads live
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,,fraudshield,strategy,sod,phase-4,role-java-engineer,
+147,E10,Story,Rules and thresholds screen,"Shows the effect of a threshold change on recall and alerts before approval.
+
+Owner: Angular Developer (not yet in the team).
+
+Acceptance criteria:
+* Matches the design mock-up
+* Simulation result visible before submit
+* Strategist role only
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,8,,fraudshield,portal,strategy,phase-4,role-angular-developer,
+148,E10,Task,Migrate existing fraud rules into the first Drools ruleset,"Inventory current rules and mark absolute, step-up, and hold rules.
+
+Owner: Fraud Strategist (not yet in the team).
+
+Acceptance criteria:
+* Every current rule mapped or retired
+* Backtest matches current outcomes
+* Reviewed by the fraud lead
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,rules,phase-2,role-fraud-strategist,,
+155,E11,Task,Set up MLflow and the Unity Catalog model registry with Champion and Challenger aliases,"One registry for data, features, models, and approvals.
+
+Acceptance criteria:
+* Aliases in use
+* Alias change restricted to the approver group
+* Lineage from model to feature tables
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,mlops,phase-3,,,
+156,E11,Story,Train fs-txn with LightGBM and export to ONNX,"Time-based splits, downsampled genuine transactions with recalibration, chosen by recall and value saved at a fixed alert rate.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Beats the current rules offline (Phase 3 exit gate)
+* At least 75% recall at 0.2% alert rate, or gap reported
+* ONNX output matches LightGBM within tolerance
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,13,,fraudshield,model,fs-txn,phase-3,role-ml-engineer,
+157,E11,Story,Train fs-anomaly with Isolation Forest,"Detects unfamiliar behaviour with few labels. Runs on every transaction as a feature.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Exported to ONNX
+* Inference within budget
+* Contribution to fs-txn measured
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,8,,fraudshield,model,phase-3,role-ml-engineer,,
+158,E11,Story,Build fs-mule hourly batch scoring,"Graph features with gradient boosting to find mule accounts and rings.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Hourly job within budget
+* Scores synced to online store
+* Precision reviewed with analysts
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,8,,fraudshield,model,graph,phase-3,role-ml-engineer,
+159,E11,Task,Sign ONNX models and store them in immutable storage,"Signed model files only; the scoring service rejects unsigned files.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Signing key in Key Vault
+* Model files in the immutable container
+* Unsigned file rejected in test
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,mlops,security,phase-3,role-ml-engineer,
+160,E11,Story,SHAP reason codes for alerts outside the decision path,"Map SHAP values to plain-language reasons, only for alerts.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Reason codes shown only to staff
+* Mapping reviewed by the fraud lead
+* No effect on decision latency
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,model,explainability,phase-3,role-ml-engineer,
+161,E11,Story,"Model monitoring: drift, skew, and performance","Lakehouse Monitoring and Evidently: PSI above 0.2, alert rate moving more than 25%, daily precision, monthly recall.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Each signal from section 8 has an alert
+* Owner and action set per signal
+* Dashboard for the model monitoring screen
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,mlops,monitoring,FR-10,phase-3,role-ml-engineer
+162,E11,Story,Fairness comparison across review groups,"Compare challenge and false-positive rates across agreed groups, such as age bands and regions.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Groups agreed with the risk owner
+* Report included in the model card
+* Differences above limits escalated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,model,fairness,phase-3,role-ml-engineer,
+163,E11,Story,Review a random sample of low-scoring payments,"Reduces selection bias by labelling cases the model would not flag.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Sample rate agreed
+* Sample routed to analysts
+* Labels tagged as random sample
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,,fraudshield,model,selection-bias,phase-3,role-ml-engineer,
+164,E11,Task,Model card template and approval process,"The model risk owner signs off and cannot be the model's author.
+
+Owner: Model Risk Owner (not yet in the team).
+
+Acceptance criteria:
+* Template approved
+* Approval recorded as a Unity Catalog alias change
+* Risk committee path for major changes
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,governance,phase-3,role-model-risk-owner,,
+165,E11,Story,Monthly retraining job that produces a candidate,"Retraining produces a candidate only, which passes every gate.
+
+Owner: ML Engineer (not yet in the team).
+
+Acceptance criteria:
+* Scheduled monthly and on trigger
+* Candidate registered as Challenger
+* Release pipeline started automatically
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,mlops,phase-3,role-ml-engineer,,
+170,E12,Task,Apply the security module to dev: Key Vault and Defender for Cloud,"Code: infra/terraform/modules/security
+
+Acceptance criteria:
+* Key Vault private with RBAC
+* Defender plans enabled
+* Recommendations reviewed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,security,terraform,,,
+171,E12,Task,Agree PCI DSS scope with the tokenisation service owner,"Card data stays in the tokenisation service, keeping the platform out of PCI scope where possible.
+
+Acceptance criteria:
+* Scope statement agreed with the QSA or compliance
+* Tokenisation interface documented
+* Data flow diagram updated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,pci,compliance,,,
+172,E12,Task,Map controls to PRA and FCA operational resilience,"Map design controls to PRA SS1/21 and FCA SYSC 15A (important business services and impact tolerances) with the security team.
+
+Acceptance criteria:
+* Control matrix completed
+* Gaps raised as tickets
+* Reviewed by Compliance
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,Sprint 5,fraudshield,compliance,,,,
+173,E12,Task,Complete the privacy impact assessment,"Covers profiles, device signals, and Copilot use of case data.
+
+Acceptance criteria:
+* PIA drafted with Privacy
+* Actions raised as tickets
+* Approval recorded
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 4,fraudshield,privacy,compliance,,,
+174,E12,Task,Set up workload identity and PIM for admin access,"Workload identity for services; Privileged Identity Management for all admin roles, with MFA.
+
+Acceptance criteria:
+* No standing admin access in test and prod
+* AKS workloads use federated identities
+* Access reviews scheduled
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,identity,,,,
+175,E12,Task,"Threat model for the decision path, including reason-code leakage","Section 16: attackers may learn from reason codes. Reasons are shown only to staff and scores are rate-limited.
+
+Owner: Security Engineer (not yet in the team).
+
+Acceptance criteria:
+* STRIDE threat model reviewed
+* Rate limits set in APIM
+* Findings raised as tickets
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 5,fraudshield,security,risk,role-security-engineer,,
+176,E12,Task,Customer-managed keys in Key Vault Managed HSM,"Customer-managed keys for Cosmos DB, SQL, storage, and Event Hubs.
+
+Owner: Security Engineer (not yet in the team).
+
+Acceptance criteria:
+* Managed HSM in both regions
+* All stores encrypted with CMK
+* Key rotation tested
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,security,phase-2,role-security-engineer,,
+177,E12,Task,Microsoft Sentinel and immutable audit logs,"Immutable audit and decision replay for 7 years.
+
+Owner: Security Engineer (not yet in the team).
+
+Acceptance criteria:
+* Audit export to the immutable container
+* Sentinel analytics rules on
+* Replay of a decision demonstrated
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,security,audit,phase-5,role-security-engineer,
+178,E12,Task,"Pre-go-live penetration test, including AI-specific tests","Independent test of the portal, APIs, network, and Copilot.
+
+Owner: Security Engineer (not yet in the team).
+
+Acceptance criteria:
+* No open critical or high findings
+* Retest completed
+* Report filed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,security,phase-5,role-security-engineer,,
+185,E13,Task,Write the FraudShield test strategy and Phase 1 test plan,"Based on section 14: unit, contract, data and ETL, functional and UAT, performance, resilience, model, Copilot, and security levels.
+
+Acceptance criteria:
+* Owners and tools per level
+* Entry and exit criteria per environment
+* Approved by the project coordinator
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,Sprint 1,fraudshield,test-strategy,,,,
+186,E13,Task,Set up test management in Jira,"Test cases linked to stories, with results published from pipelines.
+
+Acceptance criteria:
+* Test issue types configured
+* Pipeline results linked
+* Traceability report from FR to test
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,test-management,,,,
+187,E13,Task,"Test data management: synthetic for dev, tokenised samples for test","Dev uses synthetic data only; test uses tokenised samples; perf uses synthetic data at production scale.
+
+Acceptance criteria:
+* Rules documented per environment
+* Check that no live data reaches dev
+* Synthetic data accepted by the tester
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 2,fraudshield,test-data,,,,
+188,E13,Task,Infrastructure validation tests for dev,"Check private endpoints, no public network access, DNS resolution, and Bastion access after each infra.yml run.
+
+Acceptance criteria:
+* Test script in azure-pipelines/scripts
+* Runs after apply
+* Failures block promotion
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 3,fraudshield,infra-testing,,,,
+189,E13,Task,Test environment readiness checklist,"A checklist the tester signs before each environment is used for testing.
+
+Acceptance criteria:
+* Checklist in Confluence
+* Signed for dev
+* Used for test in Sprint 4
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,2,Sprint 3,fraudshield,test-env,,,,
+190,E13,Task,Data quality test plan with Great Expectations,"Reconciliation, null rates, valid ranges, and point-in-time joins, with Priyanka Pothuraju.
+
+Acceptance criteria:
+* Expectations for Bronze and Silver tables
+* Runs in the bundle jobs
+* Failures alert
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,data-testing,,,,
+191,E13,Task,Verify Unity Catalog access by role,"Each group sees only the catalogs and schemas it should.
+
+Acceptance criteria:
+* Positive and negative tests per group
+* No clear identifiers visible in Silver
+* Results recorded
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 5,fraudshield,data-testing,security,,,
+192,E13,Task,Test ingestion and reconciliation jobs,"Tests for quarantine, late chargebacks, and daily reconciliation.
+
+Acceptance criteria:
+* Invalid events quarantined
+* Late labels handled
+* Reconciliation mismatch alerts
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 6,fraudshield,data-testing,,,,
+193,E13,Task,Build the Gatling load test harness for the decision API,"Harness for 2,000 TPS sustained and 5,000 TPS peak, run against a stub until the decision service exists.
+
+Acceptance criteria:
+* Scenarios per channel
+* Runs from a pipeline in perf
+* p99 reported at APIM
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 6,fraudshield,performance,,,,
+194,E13,Task,Network connectivity test pack,"Tests for firewall rules, peering, private DNS, and mTLS rejection, with Sri Gowthami.
+
+Acceptance criteria:
+* Runs in dev and test
+* mTLS negative test included
+* Results attached to the network tickets
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,Sprint 5,fraudshield,infra-testing,network,,,
+195,E13,Task,Contract tests for the decision API and event schemas,"Spring Cloud Contract and Schema Registry compatibility checks.
+
+Acceptance criteria:
+* Contracts in CI
+* Breaking change fails the build
+* Channels review the contract
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,contracts,phase-2,,,
+196,E13,Task,8-hour soak test at peak load,"5,000 TPS peak and an 8-hour soak, with p99 under 200 ms.
+
+Acceptance criteria:
+* p99 under 200 ms throughout
+* No memory growth
+* Report signed off
+
+Source: FraudShield Solution Design Document, Draft 1.0.",pradip.shrestha@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,performance,phase-5,,,
+200,E14,Task,Apply the observability module to dev,"Log Analytics, Application Insights, action groups, and platform alerts. Code: infra/terraform/modules/observability
+
+Acceptance criteria:
+* All resources send diagnostics
+* Action group reaches the team
+* Alert rules for data stores and AKS
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,Sprint 4,fraudshield,observability,terraform,,,
+201,E14,Task,"Network monitoring: Connection Monitor, firewall logs, and ExpressRoute alerts","Monitor reachability between spokes, firewall denies, and ExpressRoute circuit health.
+
+Acceptance criteria:
+* Connection Monitor tests between spokes
+* Firewall workbook
+* Circuit alerts ready
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,Sprint 6,fraudshield,observability,network,,,
+202,E14,Task,OpenTelemetry collector and Grafana dashboards,"Traces and metrics from services, with the latency budget broken down per step.
+
+Owner: DevOps Engineer (not yet in the team).
+
+Acceptance criteria:
+* p99 per step visible
+* Dashboards in Git
+* Trace sampling agreed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,observability,phase-2,role-devops-engineer,,
+203,E14,Task,ServiceNow incident and change integration,"Coordinate with the ServiceNow consultant: alerts raise incidents, and production changes need a change record.
+
+Acceptance criteria:
+* Critical alerts create incidents
+* Change record required for prod pipelines
+* Tested end to end
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,3,,fraudshield,servicenow,phase-5,,,
+204,E14,Task,Runbooks and on-call for the decision path and model incidents,"Runbooks for every failure in section 4, and on-call rota including an ML engineer.
+
+Owner: DevOps Engineer (not yet in the team).
+
+Acceptance criteria:
+* Runbook per failure mode
+* On-call rota agreed
+* Tabletop exercise held
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,operations,phase-5,role-devops-engineer,,
+210,E15,Task,Design active-active decision traffic across two regions,"Routing from channels and APIM to both regions, with failover under 5 minutes.
+
+Acceptance criteria:
+* Design reviewed with Anoop and the bank network team
+* Failover triggers defined
+* Terraform changes listed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,Sprint 5,fraudshield,multi-region,network,,,
+211,E15,Task,Test Cosmos DB multi-region writes and the SQL failover group,"Confirm no accepted decision is lost when a region fails.
+
+Acceptance criteria:
+* Failover tested in perf
+* Data loss measured as zero for accepted decisions
+* Runbook written
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,5,,fraudshield,multi-region,phase-5,,,
+212,E15,Task,"Chaos Studio experiments: lose the feature store, a region, and Event Hubs","Resilience tests from section 14, run with the DevOps engineers.
+
+Acceptance criteria:
+* Each failure behaves as section 4 says
+* Alerts fire at the right severity
+* Findings fixed or accepted
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,8,,fraudshield,chaos,phase-5,,,
+213,E15,Task,Regional failover test under 5 minutes,"A go-live criterion.
+
+Acceptance criteria:
+* Failover completed in under 5 minutes
+* No accepted decisions lost
+* Evidence filed for go-live
+
+Source: FraudShield Solution Design Document, Draft 1.0.",srigowthami.seelam@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,,fraudshield,multi-region,gate,phase-5,,
+214,E15,Task,Lakehouse recovery: ADLS redundancy and Databricks workspace rebuild,"The lakehouse can be down for hours without affecting payments, but must be recoverable.
+
+Acceptance criteria:
+* Recovery objectives agreed
+* Workspace rebuild from the bundle tested
+* Storage redundancy confirmed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",anoop.kulkarni@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Medium,To Do,5,,fraudshield,dr,phase-5,,,
+220,E16,Task,Run full-volume shadow traffic for four weeks,"Decisions recorded with no customer impact, compared with current rules.
+
+Owner: Java Engineer (not yet in the team).
+
+Acceptance criteria:
+* Four weeks meeting detection targets
+* No feature issues
+* Monitoring report signed
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,8,,fraudshield,shadow,phase-5,role-java-engineer,,
+221,E16,Task,Go-live readiness review,"No open critical or high defects, four-week shadow run, successful failover test, and fraud, risk, and security approval.
+
+Acceptance criteria:
+* Evidence pack complete
+* All owners sign
+* Go or no-go recorded
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,3,,fraudshield,gate,phase-5,,,
+222,E16,Task,"Plan the phased rollout one channel at a time, starting with step-up only","Order channels, agree rollback limits, and communications.
+
+Acceptance criteria:
+* Channel order agreed
+* Rollback limits per channel
+* Communications plan
+
+Source: FraudShield Solution Design Document, Draft 1.0.",yeshwanth.chemakuri@zynxtechnologies.com,yeshwanth.chemakuri@zynxtechnologies.com,High,To Do,3,,fraudshield,rollout,phase-6,,,
+223,E16,Task,Risk owner sign-off for each channel,"Phase 6 exit gate.
+
+Owner: Model Risk Owner (not yet in the team).
+
+Acceptance criteria:
+* Sign-off per channel
+* Limits reviewed after first week
+* Recorded in Jira
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,2,,fraudshield,rollout,gate,phase-6,role-model-risk-owner,
+224,E16,Task,Production release of the first channel,"Deploy through app.yml with canary, starting with step-up decisions only.
+
+Owner: DevOps Engineer (not yet in the team).
+
+Acceptance criteria:
+* Canary limits respected
+* Hypercare rota in place
+* Post-release review held
+
+Source: FraudShield Solution Design Document, Draft 1.0.",,yeshwanth.chemakuri@zynxtechnologies.com,Highest,To Do,5,,fraudshield,rollout,phase-6,role-devops-engineer,,

@@ -1,0 +1,62 @@
+{{- if and .Values.rollout.enabled .Values.rollout.analysis.enabled }}
+{{- $a := .Values.rollout.analysis -}}
+{{- $canary := `rollouts_pod_template_hash="{{args.canary-hash}}"` -}}
+{{- $stable := `rollouts_pod_template_hash="{{args.stable-hash}}"` -}}
+# Canary limits from design section 8: errors and latency on the canary pods, and, for the decision
+# service, alert and step-up rates compared with the stable pods. A breach fails the analysis, and
+# Argo Rollouts rolls back automatically.
+#
+# Metric contract for the Java services (Micrometer):
+#   http_server_requests_seconds_*                     standard Spring Boot HTTP metrics
+#   fraudshield_decisions_total{outcome_group=...}     decision service; outcome_group is allow, step_up, or alert
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "fs.name" . }}-canary
+  labels:
+    {{- include "fs.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: canary-hash
+    - name: stable-hash
+  metrics:
+    - name: error-rate
+      interval: 1m
+      failureLimit: 2
+      successCondition: len(result) == 0 || isNaN(result[0]) || result[0] <= {{ $a.maxErrorRate }}
+      provider:
+        prometheus:
+          address: {{ $a.prometheusAddress }}
+          query: |
+            sum(rate(http_server_requests_seconds_count{ {{- $canary }},outcome="SERVER_ERROR"}[2m]))
+            /
+            sum(rate(http_server_requests_seconds_count{ {{- $canary }}}[2m]))
+    - name: p99-latency
+      interval: 1m
+      failureLimit: 2
+      successCondition: len(result) == 0 || isNaN(result[0]) || result[0] <= {{ $a.maxP99Seconds }}
+      provider:
+        prometheus:
+          address: {{ $a.prometheusAddress }}
+          query: |
+            histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{ {{- $canary }}}[2m])))
+    {{- if $a.decisionRates }}
+    {{- range $group := list "alert" "step_up" }}
+    - name: {{ $group | replace "_" "-" }}-rate-drift
+      interval: 5m
+      failureLimit: 1
+      successCondition: len(result) == 0 || isNaN(result[0]) || result[0] <= {{ $a.maxRateDrift }}
+      provider:
+        prometheus:
+          address: {{ $a.prometheusAddress }}
+          # Relative difference between canary and stable in the share of decisions in this group.
+          query: |
+            abs(
+              (sum(rate(fraudshield_decisions_total{ {{- $canary }},outcome_group="{{ $group }}"}[10m])) / sum(rate(fraudshield_decisions_total{ {{- $canary }}}[10m])))
+              /
+              (sum(rate(fraudshield_decisions_total{ {{- $stable }},outcome_group="{{ $group }}"}[10m])) / sum(rate(fraudshield_decisions_total{ {{- $stable }}}[10m])))
+              - 1
+            )
+    {{- end }}
+    {{- end }}
+{{- end }}

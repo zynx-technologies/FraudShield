@@ -1,0 +1,17 @@
+# Local development: in-memory database, synthetic data, and header sign-in.
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:strategy;MODE=MSSQLServer;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+  flyway:
+    locations: classpath:db/migration
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.oauth2.server.resource.autoconfigure.web.OAuth2ResourceServerAutoConfiguration
+      - org.springframework.boot.security.oauth2.server.resource.autoconfigure.OAuth2ResourceServerAutoConfiguration
+
+fraudshield:
+  seed:
+    enabled: true

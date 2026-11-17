@@ -1,0 +1,10 @@
+# Strategy service: rules, thresholds and the simulator, and model release approval (FR-8, FR-10).
+serviceName: strategy
+database:
+  enabled: true
+ingress:
+  enabled: true
+  paths: ["/api/v1/rules", "/api/v1/thresholds", "/api/v1/models"]
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 4

@@ -1,0 +1,60 @@
+# Reusable: shadow or release a model version in one environment, then wait until the decision and
+# scoring Rollouts are healthy on it in every cluster. A breached canary limit rolls back in the cluster
+# and fails this job.
+name: Model promotion
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      model:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+      action:
+        type: string
+        required: true
+
+jobs:
+  promote:
+    name: ${{ inputs.action }} in ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    environment: fraudshield-${{ inputs.environment }}
+    timeout-minutes: 180
+    permissions:
+      id-token: write
+      contents: write # writes model.yaml on the releases branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Update the model version and wait for the rollout
+        run: |
+          set -euo pipefail
+          if [[ "$ACTION" == shadow ]]; then
+            expr=".model.shadowVersion = \"$VERSION\""
+            expect="FRAUDSHIELD_SHADOW_MODEL_VERSION=$VERSION"
+          else
+            expr=".model.version = \"$VERSION\" | .model.shadowVersion = \"\""
+            expect="FRAUDSHIELD_MODEL_VERSION=$VERSION"
+          fi
+          azure-pipelines/scripts/commit-release.sh "environments/$ENVIRONMENT/model.yaml" "$expr" \
+            "$ACTION $MODEL v$VERSION in $ENVIRONMENT (run $GITHUB_RUN_ID)"
+          # Config changes roll the pods, so the canary and its analysis run here too.
+          azure-pipelines/scripts/wait-for-rollout.sh config "$expect" 150 decision,scoring
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          MODEL: ${{ inputs.model }}
+          VERSION: ${{ inputs.version }}
+          ACTION: ${{ inputs.action }}
+          AKS_CLUSTERS: ${{ vars.AKS_CLUSTERS }}
+          GITHUB_TOKEN: ${{ github.token }}

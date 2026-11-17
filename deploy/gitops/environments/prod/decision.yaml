@@ -1,0 +1,6 @@
+# 5,000 TPS peak across two regions (design section 2). Pre-warmed so scaling is rarely needed.
+autoscaling:
+  minReplicas: 8
+  maxReplicas: 40
+pdb:
+  minAvailable: 6

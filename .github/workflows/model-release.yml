@@ -1,0 +1,134 @@
+# Model promotion (design section 8). Run by hand for one Unity Catalog model version.
+#   shadow   checks validation, fairness, explainability, performance, and the signed artifact, then
+#            runs the version as a shadow challenger in every environment. It never affects a decision.
+#   release  also checks 14 days of stable shadow and an approval by the model risk owner (not the
+#            author), then rolls it out as a canary: dev, test, perf, prod. Argo Rollouts rolls back
+#            automatically on breached limits. After prod, the "champion" alias moves to this version.
+#
+# The gate check and the alias change run on the self-hosted "fraudshield-private" runners, because the
+# production Databricks workspace has no public access.
+name: Model release
+run-name: ${{ inputs.action }} ${{ inputs.model }} v${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Model
+        type: choice
+        options: [fs_txn, fs_anomaly]
+        default: fs_txn
+      version:
+        description: Unity Catalog model version
+        type: string
+        required: true
+      action:
+        description: Action
+        type: choice
+        options: [shadow, release]
+        default: shadow
+
+concurrency:
+  group: model-release-${{ inputs.model }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  UC_MODEL: fraudshield_prod.models.${{ inputs.model }}
+  MLFLOW_REQUIREMENT: mlflow-skinny>=2.19,<3
+
+jobs:
+  gates:
+    name: Check promotion gates
+    runs-on: [self-hosted, fraudshield-private]
+    environment: fraudshield-models
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Check the version number
+        run: '[[ "$VERSION" =~ ^[0-9]+$ ]] || { echo "::error::Version must be a number, got $VERSION"; exit 1; }'
+        env:
+          VERSION: ${{ inputs.version }}
+
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Check gates
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet "$MLFLOW_REQUIREMENT"
+          python3 azure-pipelines/scripts/check_model_gates.py --model "$UC_MODEL" --version "$VERSION" --stage "$ACTION"
+        env:
+          VERSION: ${{ inputs.version }}
+          ACTION: ${{ inputs.action }}
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_AUTH_TYPE: azure-cli
+
+      - name: Keep the gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-gate-evidence
+          path: ${{ runner.temp }}/model-gates.json
+          if-no-files-found: warn
+
+  dev:
+    needs: gates
+    uses: ./.github/workflows/_model-promote.yml
+    with: { environment: dev, model: "${{ inputs.model }}", version: "${{ inputs.version }}", action: "${{ inputs.action }}" }
+
+  test:
+    needs: dev
+    uses: ./.github/workflows/_model-promote.yml
+    with: { environment: test, model: "${{ inputs.model }}", version: "${{ inputs.version }}", action: "${{ inputs.action }}" }
+
+  perf:
+    needs: test
+    uses: ./.github/workflows/_model-promote.yml
+    with: { environment: perf, model: "${{ inputs.model }}", version: "${{ inputs.version }}", action: "${{ inputs.action }}" }
+
+  prod:
+    needs: perf
+    uses: ./.github/workflows/_model-promote.yml
+    with: { environment: prod, model: "${{ inputs.model }}", version: "${{ inputs.version }}", action: "${{ inputs.action }}" }
+
+  champion:
+    name: Mark as champion
+    needs: prod
+    if: inputs.action == 'release'
+    runs-on: [self-hosted, fraudshield-private]
+    environment: fraudshield-models
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Move the champion alias
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet "$MLFLOW_REQUIREMENT"
+          python3 - <<'EOF'
+          import os
+          from mlflow import MlflowClient
+          MlflowClient(registry_uri="databricks-uc").set_registered_model_alias(
+              os.environ["UC_MODEL"], "champion", os.environ["VERSION"])
+          print(f"champion -> {os.environ['UC_MODEL']} v{os.environ['VERSION']}")
+          EOF
+        env:
+          VERSION: ${{ inputs.version }}
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_AUTH_TYPE: azure-cli

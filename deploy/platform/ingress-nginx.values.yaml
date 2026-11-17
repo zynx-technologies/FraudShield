@@ -1,0 +1,33 @@
+# Internal-only ingress controller on a fixed private IP in snet-ingress. Application Gateway (portal)
+# and API Management (channels and portal APIs) send traffic to this address.
+# platform.yml sets controller.service.loadBalancerIP, the subnet annotation, and the image registry.
+controller:
+  # Images are imported into the shared registry by tag, so digests from the upstream registry are not used.
+  image:
+    digest: ""
+    digestChroot: ""
+  ingressClassResource:
+    name: nginx-internal
+    controllerValue: k8s.io/ingress-nginx-internal
+  ingressClass: nginx-internal
+  replicaCount: 3
+  minAvailable: 2
+  nodeSelector:
+    fraudshield.io/pool: apps
+  config:
+    use-forwarded-headers: "true"
+    enable-opentelemetry: "false"
+    server-tokens: "false"
+    ssl-protocols: "TLSv1.2 TLSv1.3"
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  metrics:
+    enabled: true
+  admissionWebhooks:
+    patch:
+      enabled: true
+      image:
+        digest: ""

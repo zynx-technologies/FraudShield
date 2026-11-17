@@ -1,0 +1,8 @@
+# Case Copilot: grounded, cited case summaries (FR-7). It has no tools that can change a case.
+serviceName: copilot
+ingress:
+  enabled: true
+  paths: ["/api/v1/copilot"]
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 4

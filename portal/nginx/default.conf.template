@@ -1,0 +1,32 @@
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+    index index.html;
+    server_tokens off;
+    client_max_body_size 1m;
+
+    add_header Content-Security-Policy "default-src 'self'; connect-src 'self' https://login.microsoftonline.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src https://login.microsoftonline.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://login.microsoftonline.com" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok";
+    }
+
+    # Runtime settings, filled from the pod's environment (deploy/helm/fraudshield-service, kind: static).
+    location = /config.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"authMode":"entra","clientId":"${ENTRA_SPA_CLIENT_ID}","tenantId":"${ENTRA_TENANT_ID}","apiScope":"${ENTRA_API_SCOPE}","dataLabel":"${FRAUDSHIELD_DATA_LABEL}","reportsUrl":"${FRAUDSHIELD_REPORTS_URL}"}';
+    }
+
+    # API calls (/api/v1/...) never reach this container: Application Gateway sends them to API Management.
+
+    location / {
+        add_header Cache-Control "no-cache" always;
+        try_files $uri /index.html;
+    }
+}
