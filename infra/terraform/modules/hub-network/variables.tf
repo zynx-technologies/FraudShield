@@ -21,6 +21,12 @@ variable "zones" {
   default = ["1", "2", "3"]
 }
 
+variable "firewall_enabled" {
+  description = "False only for a low-cost environment whose workloads leave through a NAT gateway (no AKS)."
+  type        = bool
+  default     = true
+}
+
 variable "firewall_sku" {
   description = "Standard, or Premium for IDPS in production."
   type        = string

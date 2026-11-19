@@ -1,5 +1,6 @@
 # Read by .github/scripts/publish-platform-values.sh after every apply. It writes one values file
-# per cluster to the "releases" branch, where Argo CD picks it up. No secrets are included.
+# per region to the "releases" branch, where Argo CD (AKS) or deploy-container-apps.sh (Container Apps)
+# picks it up. No secrets are included.
 output "platform_values" {
   sensitive = true
   value = {
@@ -8,7 +9,9 @@ output "platform_values" {
         environment                 = var.environment
         region                      = k
         location                    = r.location
-        clusterName                 = module.aks[k].name
+        computePlatform             = var.compute_platform
+        clusterName                 = local.aks ? module.aks[k].name : null
+        containerAppsDomain         = local.aks ? null : module.container_apps[0].default_domain
         resourceGroup               = azurerm_resource_group.region[k].name
         ingressIp                   = module.app_spoke[k].ingress_ip
         ingressSubnet               = module.app_spoke[k].ingress_subnet_name
@@ -34,12 +37,16 @@ output "platform_values" {
 
 # Space-separated "resource-group/cluster" pairs, for the AKS_CLUSTERS variable on the environment's
 # GitHub environment.
+# Empty with Container Apps.
 output "aks_clusters" {
-  value = join(" ", [for k, r in local.regions : "${azurerm_resource_group.region[k].name}/${module.aks[k].name}"])
+  value = join(" ", [for k, c in module.aks : "${azurerm_resource_group.region[k].name}/${c.name}"])
 }
 
 output "portal_url" {
-  value = length(module.edge) > 0 ? module.edge[0].portal_url : "edge not deployed: set origin_certificate_secret_id"
+  value = (
+    !local.aks ? "https://${module.apim.gateway_host}/" :
+    length(module.edge) > 0 ? module.edge[0].portal_url : "edge not deployed: set origin_certificate_secret_id"
+  )
 }
 
 output "front_door_id" {

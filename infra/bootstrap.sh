@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # One-time setup, run by an Azure administrator before the first pipeline run.
-# Creates Terraform state storage and the shared container registry (Premium, replicated to the second
-# region so both AKS clusters pull locally). Images are built once and promoted through every environment.
+# Creates Terraform state storage and the shared container registry. Images are built once and promoted
+# through every environment.
 #
 # Usage: ./infra/bootstrap.sh <prefix> [primary-location] [secondary-location]
 #   prefix: 3 to 8 lowercase letters or digits, the same value as unique_prefix in Terraform.
-#   ACR_SKU (environment, default Premium): Standard is enough while only dev and test exist. Premium is
-#   needed for the replica in the second region, so upgrade before perf or prod:
-#   az acr update --name <registry> --sku Premium, then rerun this script to add the replica.
+#   ACR_SKU (environment, default Standard): Standard is enough while only dev and test exist. Perf and prod
+#   need Premium for the replica in the second region, so both AKS clusters pull locally. To upgrade, run
+#   ACR_SKU=Premium ./infra/bootstrap.sh <prefix>, which also adds the replica.
 set -euo pipefail
 
 PREFIX="${1:?Give a short lowercase prefix, for example fsacme}"
 LOCATION="${2:-uksouth}"
 SECONDARY="${3:-ukwest}"
-ACR_SKU="${ACR_SKU:-Premium}"
+ACR_SKU="${ACR_SKU:-Standard}"
 
 if [[ ! "$PREFIX" =~ ^[a-z][a-z0-9]{2,7}$ ]]; then
   echo "The prefix must be 3 to 8 lowercase letters or digits, starting with a letter." >&2
@@ -34,10 +34,17 @@ az storage account blob-service-properties update --account-name "$STORAGE" --re
   --enable-versioning true --enable-delete-retention true --delete-retention-days 30 --output none
 az storage container create --name tfstate --account-name "$STORAGE" --auth-mode login --output none
 
-az acr create --name "$ACR" --resource-group "$RG" --location "$LOCATION" --sku Premium \
-  --admin-enabled false --output none
-az acr replication create --registry "$ACR" --location "$SECONDARY" --output none || \
-  echo "Replication to $SECONDARY already exists or could not be created. Check it before running perf or prod."
+if az acr show --name "$ACR" --resource-group "$RG" --output none 2>/dev/null; then
+  az acr update --name "$ACR" --sku "$ACR_SKU" --output none
+else
+  az acr create --name "$ACR" --resource-group "$RG" --location "$LOCATION" --sku "$ACR_SKU" \
+    --admin-enabled false --output none
+fi
+# Replicas need Premium. Standard keeps a single copy in the primary region.
+if [[ "$ACR_SKU" == Premium ]]; then
+  az acr replication create --registry "$ACR" --location "$SECONDARY" --output none || \
+    echo "Replication to $SECONDARY already exists or could not be created. Check it before running perf or prod."
+fi
 
 cat <<EOF
 

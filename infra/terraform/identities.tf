@@ -1,5 +1,6 @@
-# One managed identity per service, federated with the AKS cluster in every region (workload identity).
-# Services hold no secrets. Design section 12.
+# One managed identity per service. With AKS it is federated with the cluster in every region (workload
+# identity). With Container Apps it is assigned to the service's app directly. Services hold no secrets.
+# Design section 12.
 #
 # Azure SQL access is granted inside the database (CREATE USER ... FROM EXTERNAL PROVIDER) by a
 # Flyway migration run by the SQL admin group, so it is not managed here.
@@ -10,7 +11,7 @@ locals {
   services      = ["decision", "case", "strategy", "copilot"]
   k8s_namespace = "fraudshield"
 
-  federations = {
+  federations = !local.aks ? {} : {
     for pair in setproduct(local.services, keys(local.regions)) :
     "${pair[0]}-${pair[1]}" => { service = pair[0], region = pair[1] }
   }

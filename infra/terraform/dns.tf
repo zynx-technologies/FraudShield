@@ -3,7 +3,7 @@
 # a service in UK West always resolves to an endpoint in UK West.
 
 locals {
-  dns_zones = {
+  private_link_zones = {
     cosmos            = "privatelink.documents.azure.com"
     sql               = "privatelink.database.windows.net"
     redis             = "privatelink.redis.azure.net"
@@ -17,8 +17,11 @@ locals {
     aiservices        = "privatelink.services.ai.azure.com"
     signalr           = "privatelink.service.signalr.net"
     datafactory       = "privatelink.datafactory.azure.net"
-    apim              = "azure-api.net"
   }
+
+  # Internal API Management only. In external mode (Container Apps) the gateway keeps its public DNS, and
+  # a private azure-api.net zone with no records would hide it from the VNet.
+  dns_zones = merge(local.private_link_zones, local.aks ? { apim = "azure-api.net" } : {})
 
   zone_instances = {
     for pair in setproduct(keys(local.regions), keys(local.dns_zones)) :
@@ -68,7 +71,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
 # API Management in internal mode has no automatic DNS. Each region resolves the gateway to its own
 # regional private address, so channels in each region are served locally.
 resource "azurerm_private_dns_a_record" "apim_gateway" {
-  for_each            = local.regions
+  for_each            = local.aks ? local.regions : {}
   name                = module.apim.name
   private_dns_zone_id = azurerm_private_dns_zone.this["${each.key}-apim"].id
   ttl                 = 60

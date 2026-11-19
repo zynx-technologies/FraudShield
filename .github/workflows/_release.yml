@@ -1,6 +1,7 @@
 # Reusable: promotes one image tag to one environment by updating the releases branch, then waits until
 # Argo CD has synced and every Rollout is Healthy in every cluster. Canary analysis runs inside the
 # cluster, so a failing canary rolls itself back and this job fails.
+# On Container Apps (dev) it updates every app instead, and waits until each new revision is ready.
 name: Release environment
 
 on:
@@ -43,4 +44,9 @@ jobs:
           .github/scripts/commit-release.sh "environments/$ENVIRONMENT/release.yaml" \
             ".global.imageTag = \"$IMAGE_TAG\"" \
             "Release $IMAGE_TAG to $ENVIRONMENT (run $GITHUB_RUN_ID)"
-          .github/scripts/wait-for-rollout.sh image "$IMAGE_TAG" "$TIMEOUT"
+          # Container Apps (dev) has no Argo CD, so the release is applied here.
+          if [[ "$(.github/scripts/compute-platform.sh "$ENVIRONMENT")" == container_apps ]]; then
+            .github/scripts/deploy-container-apps.sh "$ENVIRONMENT" "$TIMEOUT"
+          else
+            .github/scripts/wait-for-rollout.sh image "$IMAGE_TAG" "$TIMEOUT"
+          fi

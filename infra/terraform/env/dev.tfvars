@@ -1,14 +1,17 @@
 # Development and experiments. Synthetic data only (design section 11).
+#
+# Low-cost layout: Container Apps instead of AKS, and API Management (Developer, external mode) as the
+# public entry point instead of Front Door and Application Gateway. No hub firewall (apps leave through a
+# NAT gateway) and no Bastion. Test, perf, and prod keep the full AKS layout.
 environment   = "dev"
 address_space = "10.60.0.0/16"
 multi_region  = false
 
-firewall_sku       = "Standard"
-apim_sku           = "Developer_1"
-aks_sku_tier       = "Standard"
-aks_apps_vm_size   = "Standard_D4ds_v5"
-aks_apps_min_count = 1
-aks_apps_max_count = 4
+compute_platform = "container_apps"
+firewall_enabled = false
+bastion_enabled  = false
+
+apim_sku = "Developer_1"
 
 sql_sku               = "GP_S_Gen5_2"
 cosmos_max_throughput = 1000
@@ -18,5 +21,4 @@ event_hubs_capacity   = 1
 signalr_sku           = "Standard_S1"
 
 databricks_public_access = true
-waf_mode                 = "Detection"
 log_retention_days       = 30

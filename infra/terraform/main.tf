@@ -3,6 +3,9 @@
 #   Region "primary"   (UK South) hub, application spoke, AKS, data spoke, global services
 #   Region "secondary" (UK West)  hub, application spoke, AKS  -- perf and prod only
 #
+# compute_platform = "container_apps" (dev) swaps AKS, Front Door, and Application Gateway for Container
+# Apps behind API Management in external mode, and can drop the hub firewall and Bastion.
+#
 # Address plan inside var.address_space (/16): each region gets a /17, split into
 #   hub /22 at +0.0, application spoke /19 at +32.0, data spoke /19 at +64.0 (primary only).
 
@@ -33,6 +36,7 @@ locals {
   }
 
   primary   = local.regions["primary"]
+  aks       = var.compute_platform == "aks"
   name      = "fraudshield-${var.environment}"
   stor_name = "${var.unique_prefix}fs${var.environment}"
 
@@ -101,6 +105,7 @@ module "hub" {
   resource_group_name          = azurerm_resource_group.region[each.key].name
   address_space                = cidrsubnet(each.value.cidr, 5, 0)
   zones                        = each.value.zones
+  firewall_enabled             = var.firewall_enabled
   firewall_sku                 = var.firewall_sku
   aks_subnet_cidrs             = [cidrsubnet(cidrsubnet(each.value.cidr, 2, 1), 2, 0)]
   acr_name                     = var.acr_name
@@ -117,6 +122,8 @@ module "app_spoke" {
   location                = each.value.location
   resource_group_name     = azurerm_resource_group.region[each.key].name
   address_space           = cidrsubnet(each.value.cidr, 2, 1)
+  compute_platform        = var.compute_platform
+  apim_public             = !local.aks
   firewall_private_ip     = module.hub[each.key].firewall_private_ip
   hub_vnet_id             = module.hub[each.key].vnet_id
   hub_vnet_name           = module.hub[each.key].vnet_name
@@ -165,7 +172,7 @@ locals {
 
 module "aks" {
   source                     = "./modules/aks"
-  for_each                   = local.regions
+  for_each                   = local.aks ? local.regions : {}
   name                       = "aks-${each.value.name}"
   location                   = each.value.location
   resource_group_name        = azurerm_resource_group.region[each.key].name
@@ -190,6 +197,32 @@ module "aks" {
   depends_on = [module.hub]
 }
 
+# ---------- Container Apps (compute_platform = "container_apps") ----------
+
+module "container_apps" {
+  source                     = "./modules/container-apps"
+  count                      = local.aks ? 0 : 1
+  name                       = local.primary.name
+  location                   = local.primary.location
+  resource_group_name        = azurerm_resource_group.region["primary"].name
+  subnet_id                  = module.app_spoke["primary"].container_apps_subnet_id
+  vnet_id                    = module.app_spoke["primary"].vnet_id
+  log_analytics_workspace_id = module.observability.log_analytics_workspace_id
+  acr_id                     = data.azurerm_container_registry.shared.id
+  registry_server            = data.azurerm_container_registry.shared.login_server
+  service_identities = {
+    for s in local.services : s => {
+      id        = azurerm_user_assigned_identity.service[s].id
+      client_id = azurerm_user_assigned_identity.service[s].client_id
+    }
+  }
+  apim = {
+    name                = module.apim.name
+    resource_group_name = azurerm_resource_group.region["primary"].name
+  }
+  tags = local.tags
+}
+
 # ---------- API Management ----------
 
 module "apim" {
@@ -198,10 +231,12 @@ module "apim" {
   location            = local.primary.location
   resource_group_name = azurerm_resource_group.region["primary"].name
   sku_name            = var.apim_sku
-  zones               = startswith(var.apim_sku, "Premium") ? local.primary.zones : []
-  publisher_name      = var.apim_publisher_name
-  publisher_email     = var.apim_publisher_email
-  subnet_id           = module.app_spoke["primary"].apim_subnet_id
+  # Internal behind Application Gateway with AKS. External, as the public entry point, with Container Apps.
+  virtual_network_type = local.aks ? "Internal" : "External"
+  zones                = startswith(var.apim_sku, "Premium") ? local.primary.zones : []
+  publisher_name       = var.apim_publisher_name
+  publisher_email      = var.apim_publisher_email
+  subnet_id            = module.app_spoke["primary"].apim_subnet_id
   additional_locations = {
     for k, r in local.regions : k => {
       location  = r.location
@@ -279,9 +314,10 @@ module "ai" {
 
 # ---------- Edge (portal users) ----------
 
+# AKS only. With Container Apps, API Management is the public entry point.
 module "edge" {
   source                = "./modules/edge"
-  count                 = var.origin_certificate_secret_id == "" ? 0 : 1
+  count                 = local.aks && var.origin_certificate_secret_id != "" ? 1 : 0
   name                  = local.name
   resource_group_name   = azurerm_resource_group.region["primary"].name
   waf_mode              = var.waf_mode
