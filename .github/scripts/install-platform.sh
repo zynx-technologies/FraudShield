@@ -7,11 +7,13 @@
 # third-party images are imported into the registry first, and a post-renderer points charts at it.
 #
 # Usage: install-platform.sh <environment>
-# Needs: ACR_NAME, AKS_CLUSTERS, GITOPS_REPO_URL, GITOPS_REPO_TOKEN (read-only PAT), and helm, jq, yq.
+# Needs: ACR_NAME, AKS_CLUSTERS, GITOPS_REPO_URL, and helm, jq, yq. GITOPS_REPO_TOKEN (a read-only token)
+# is needed only while the repository is private.
 set -euo pipefail
 
 ENVIRONMENT="$1"
-: "${ACR_NAME:?}" "${AKS_CLUSTERS:?}" "${GITOPS_REPO_URL:?}" "${GITOPS_REPO_TOKEN:?}"
+: "${ACR_NAME:?}" "${AKS_CLUSTERS:?}" "${GITOPS_REPO_URL:?}"
+GITOPS_REPO_TOKEN="${GITOPS_REPO_TOKEN:-}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ACR="${ACR_NAME}.azurecr.io"
 
@@ -65,9 +67,10 @@ metadata:
 stringData:
   type: git
   url: ${GITOPS_REPO_URL}
-  username: pipelines
-  password: ${GITOPS_REPO_TOKEN}
 EOF
+if [[ -n "$GITOPS_REPO_TOKEN" ]]; then
+  printf '  username: pipelines\n  password: %s\n' "$GITOPS_REPO_TOKEN" >> "$WORK/bundle/repo-secret.yaml"
+fi
 
 for cluster in $AKS_CLUSTERS; do
   rg="${cluster%%/*}"; name="${cluster##*/}"

@@ -8,7 +8,7 @@ terraform {
     }
   }
 
-  # Values are passed by the pipeline. See infra/bootstrap.sh and azure-pipelines/templates/terraform-stage.yml.
+  # Values are passed by the pipeline. See infra/bootstrap.sh and .github/scripts/terraform.sh.
   backend "azurerm" {}
 }
 

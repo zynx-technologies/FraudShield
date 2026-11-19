@@ -2,8 +2,8 @@
 # Design section 8: pipelines and jobs are deployed from Git, never edited by hand in the workspace.
 #
 # Jobs and pipelines go in resources/*.yml, with their code under src/. Deployed by
-# azure-pipelines/databricks.yml. The workspace host comes from DATABRICKS_HOST in each environment's
-# variable group, and the pipeline signs in with its Entra identity (azure-cli auth).
+# .github/workflows/databricks.yml. The workspace host comes from DATABRICKS_HOST on each GitHub
+# environment, and the workflow signs in with its Entra identity (azure-cli auth).
 bundle:
   name: fraudshield
 

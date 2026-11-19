@@ -1,0 +1,45 @@
+# Reusable: validates and deploys the Databricks Asset Bundle to one environment's workspace, signed in
+# with the GitHub deploy identity (azure-cli auth). DATABRICKS_HOST is set on the fraudshield-<env>
+# GitHub environment from the databricks_workspace_url Terraform output.
+name: Databricks bundle
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      private_runner:
+        type: boolean
+        default: false
+
+env:
+  DATABRICKS_CLI_VERSION: 0.240.0
+
+jobs:
+  deploy:
+    name: Deploy bundle to ${{ inputs.environment }}
+    runs-on: ${{ inputs.private_runner && fromJSON('["self-hosted", "fraudshield-private"]') || 'ubuntu-24.04' }}
+    environment: fraudshield-${{ inputs.environment }}
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: databricks/setup-cli@v0.240.0
+      - name: Validate and deploy
+        working-directory: databricks
+        env:
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_AUTH_TYPE: azure-cli
+          TARGET: ${{ inputs.environment }}
+        run: |
+          : "${DATABRICKS_HOST:?Set DATABRICKS_HOST on the fraudshield-$TARGET environment}"
+          databricks bundle validate --target "$TARGET"
+          databricks bundle deploy --target "$TARGET" --auto-approve

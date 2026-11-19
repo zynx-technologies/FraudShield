@@ -66,7 +66,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --quiet "$MLFLOW_REQUIREMENT"
-          python3 azure-pipelines/scripts/check_model_gates.py --model "$UC_MODEL" --version "$VERSION" --stage "$ACTION"
+          python3 .github/scripts/check_model_gates.py --model "$UC_MODEL" --version "$VERSION" --stage "$ACTION"
         env:
           VERSION: ${{ inputs.version }}
           ACTION: ${{ inputs.action }}

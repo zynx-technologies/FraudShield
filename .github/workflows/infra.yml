@@ -1,5 +1,7 @@
-# Azure infrastructure. Merges that change infra/terraform plan and apply dev, then test.
-# Perf and prod run only when chosen by hand, and prod applies only after its reviewers approve.
+# Azure infrastructure. Merges that change infra/terraform plan and apply dev, then test, but only the
+# environments listed in the repository variable LIVE_ENVIRONMENTS (for example "dev,test"). Run it by hand
+# to create an environment the first time. Perf and prod run only when chosen by hand, and prod applies only
+# after its reviewers approve.
 name: Infrastructure
 
 on:
@@ -32,6 +34,7 @@ permissions:
 
 jobs:
   dev:
+    if: github.event_name == 'workflow_dispatch' || contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',dev,')
     uses: ./.github/workflows/_terraform.yml
     with:
       environment: dev
@@ -39,6 +42,9 @@ jobs:
 
   test:
     needs: dev
+    if: >-
+      !cancelled() && contains(fromJSON('["success", "skipped"]'), needs.dev.result)
+      && (github.event_name == 'workflow_dispatch' || contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',test,'))
     uses: ./.github/workflows/_terraform.yml
     with:
       environment: test

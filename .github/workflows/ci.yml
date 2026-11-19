@@ -1,0 +1,115 @@
+# Pull request checks for infrastructure, Kubernetes manifests, pipeline scripts, services, and the portal.
+# No Azure access, so pull requests from forks get no credentials. Make every job a required check on main.
+# The App workflow also calls this before it builds images.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  TERRAFORM_VERSION: 1.15.8
+  HELM_VERSION: v3.16.4
+  TRIVY_VERSION: 0.58.1
+  KUBECONFORM_VERSION: v0.6.7
+
+jobs:
+  terraform:
+    name: Terraform format, validate, and security scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+      - name: Format and validate
+        working-directory: infra/terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: Trivy IaC scan (fails on critical, reports high)
+        run: |
+          docker run --rm -v "$PWD:/src" "aquasec/trivy:$TRIVY_VERSION" config --severity CRITICAL --exit-code 1 /src/infra/terraform
+          docker run --rm -v "$PWD:/src" "aquasec/trivy:$TRIVY_VERSION" config --severity HIGH --exit-code 0 /src/infra/terraform
+
+  kubernetes:
+    name: Helm lint and schema checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Render every service for every environment, then validate
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
+          CHART=deploy/helm/fraudshield-service
+          for env in dev test perf prod; do
+            for svc in deploy/gitops/services/*.yaml; do
+              name="$(basename "$svc" .yaml)"
+              files=(-f "$svc" -f "deploy/gitops/environments/$env/common.yaml")
+              [[ -f "deploy/gitops/environments/$env/$name.yaml" ]] && files+=(-f "deploy/gitops/environments/$env/$name.yaml")
+              files+=(-f deploy/gitops/ci-fixture.yaml)
+              helm lint --strict "$CHART" "${files[@]}" > /dev/null
+              helm template "$name" "$CHART" "${files[@]}" > "rendered-$env-$name.yaml"
+            done
+          done
+          ./kubeconform -strict -summary \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            rendered-*.yaml deploy/platform/namespace.yaml
+      - name: Trivy Kubernetes misconfiguration scan
+        run: docker run --rm -v "$PWD:/src" "aquasec/trivy:$TRIVY_VERSION" config --severity CRITICAL,HIGH --exit-code 1 /src/deploy/helm
+
+  scripts:
+    name: Pipeline scripts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck and Python syntax
+        run: |
+          shellcheck .github/scripts/*.sh infra/bootstrap.sh
+          python3 -m py_compile .github/scripts/*.py
+
+  services:
+    name: Service tests (Java)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Unit and API tests for decision, case, strategy, and copilot
+        working-directory: services
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
+
+  portal:
+    name: Portal tests and build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: portal/package-lock.json
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx ng test --watch=false
+        env:
+          CI: '1'
+      - run: npx ng build

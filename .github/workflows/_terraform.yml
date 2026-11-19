@@ -37,7 +37,7 @@ jobs:
 
       - name: Terraform plan
         id: terraform
-        run: azure-pipelines/scripts/terraform.sh plan "${{ inputs.environment }}"
+        run: .github/scripts/terraform.sh plan "${{ inputs.environment }}"
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
@@ -91,7 +91,7 @@ jobs:
           path: ${{ runner.temp }}/tfplan
 
       - name: Terraform apply and publish platform values
-        run: azure-pipelines/scripts/terraform.sh apply "${{ inputs.environment }}" "$RUNNER_TEMP/tfplan/tfplan"
+        run: .github/scripts/terraform.sh apply "${{ inputs.environment }}" "$RUNNER_TEMP/tfplan/tfplan"
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
