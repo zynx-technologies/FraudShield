@@ -189,7 +189,7 @@ As an Azure administrator:
 ACR_SKU=Standard ./infra/bootstrap.sh <prefix>      # 3 to 8 lowercase letters or digits
 ```
 
-This creates `rg-fraudshield-shared` with the Terraform state account and the shared registry. Standard is enough while only dev and test exist. Before perf or prod, upgrade the registry with `az acr update --name <registry> --sku Premium` and run the script again, which adds the replica in UK West.
+This creates `rg-fraudshield-shared` with the Terraform state account and the shared registry. Standard is enough while only dev and test exist. Before perf or prod, run it again with `ACR_SKU=Premium`, which upgrades the registry and adds the replica in UK West.
 
 Here: prefix `zynx`, state account `zynxfsstate`, registry `zynxfsacr` (Standard), UK South.
 
