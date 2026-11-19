@@ -2,7 +2,7 @@
 
 FraudShield is the real-time payment fraud detection platform described in `FraudShield_Design_Document.pdf` (Draft 1.0, 1 November 2026). This repository holds its first deployable release: Spring Boot services, the Angular investigator portal, Azure infrastructure in **UK South and UK West**, Kubernetes deployment, and CI/CD.
 
-> **Status:** the services and portal are built and tested locally: 28 Java tests and 8 portal tests pass, and an end-to-end run of all four services works. Terraform validates offline. Nothing has been deployed to Azure yet. Expect a round of fixes on the first `infra.yml` run (Jira FS-45). **Do not use with live payments** until the items in [Before live payments](#before-live-payments) are closed.
+> **Status:** the services and portal are built and tested locally: 28 Java tests and 8 portal tests pass, and an end-to-end run of all four services works. Terraform validates offline. Nothing has been deployed to Azure yet. Expect a round of fixes on the first Infrastructure workflow run (Jira FS-45). **Do not use with live payments** until the items in [Before live payments](#before-live-payments) are closed.
 
 ## What is included
 
@@ -16,7 +16,7 @@ FraudShield is the real-time payment fraud detection platform described in `Frau
 | Argo CD ApplicationSet and per-environment values | `deploy/gitops` | 13 |
 | Cluster add-ons: internal ingress, Argo CD, Argo Rollouts, Prometheus | `deploy/platform` | 13 |
 | Databricks Asset Bundle skeleton | `databricks` | 8 |
-| Azure DevOps pipelines, and GitHub Actions for infrastructure and model releases | `azure-pipelines`, `.github` | 8, 13, 14 |
+| GitHub Actions workflows for CI, infrastructure, platform add-ons, apps, Databricks, and model releases | `.github` | 8, 13, 14 |
 | Jira backlog: 16 epics, 171 issues, sprints 1 to 6 | `delivery` | 15 |
 
 ### Not included
@@ -104,7 +104,7 @@ Portal users ──► Front Door + WAF ──► Application Gateway ─┬─ 
 
 - **Two paths.** The decision path (AKS, Redis, Cosmos DB, SQL, Event Hubs) does not depend on Databricks.
 - **Private only.** Every data service has public access disabled and is reached through private endpoints. Each region has its own private DNS zones, so a service always resolves to an endpoint in its own region.
-- **Egress control.** AKS traffic leaves only through Azure Firewall, which allows the shared registry, Microsoft endpoints, and Azure DevOps. Third-party images are imported into the registry by `platform.yml`.
+- **Egress control.** AKS traffic leaves only through Azure Firewall, which allows the shared registry, Microsoft endpoints, and `github.com` (Argo CD reads this repository). Third-party images are imported into the registry by the Platform workflow.
 - **No secrets.** Services use workload identity, with one managed identity per service. Pipelines use workload identity federation.
 
 ### Configuration and release state
@@ -120,18 +120,23 @@ Promoting a release is therefore a commit on `releases`. The pipelines then wait
 
 ## Pipelines
 
-| Pipeline | Runs when | What it does |
+GitHub Actions only. Shared scripts live in `.github/scripts`.
+
+| Workflow | Runs when | What it does |
 |---|---|---|
-| `ci.yml` | Pull requests | Terraform format, validate, and Trivy scan; renders the chart for every service in every environment and validates it with kubeconform; shellcheck; service tests |
-| `infra.yml` | Merges to `infra/terraform`, or by hand | Plans, then applies the saved plan: dev, then test. Perf and prod only when chosen. Publishes platform values to `releases` |
-| `platform.yml` | Changes to `deploy/platform` or `deploy/gitops/argocd`, or by hand | Installs cluster add-ons and the ApplicationSet in each cluster through `az aks command invoke` |
-| `app.yml` | Merges to `services`, `portal`, or `deploy/helm` | Builds every image once, scans it with Trivy, then releases dev, test, and, when chosen, perf and prod |
-| `databricks.yml` | Merges to `databricks` | Validates and deploys the bundle per environment |
-| `model-release.yml` | By hand | Checks the section 8 promotion gates, then either shadows a model version or releases it as a canary. Afterwards it moves the `champion` alias |
+| `ci.yml` (CI) | Pull requests to `main` | Terraform format, validate, and Trivy scan; renders the chart for every service in every environment and validates it with kubeconform; shellcheck; Java service tests; portal audit, tests, and build. No Azure access |
+| `infra.yml` (Infrastructure) | Merges to `infra/terraform`, or by hand | Plans, then applies the saved plan: dev, then test. Perf and prod only when chosen. Publishes platform values to `releases` |
+| `platform.yml` (Platform) | Changes to `deploy/platform` or `deploy/gitops/argocd`, or by hand | Installs cluster add-ons and the ApplicationSet in each cluster through `az aks command invoke` |
+| `app.yml` (App) | Merges to `services`, `portal`, or `deploy/helm`, or by hand | Runs CI, builds every image once on the runner, scans it with Trivy, pushes it, then releases dev, test, and, when chosen, perf and prod |
+| `databricks.yml` (Databricks) | Merges to `databricks`, or by hand | Validates and deploys the bundle per environment |
+| `model-release.yml` (Model release) | By hand | Checks the section 8 promotion gates, then either shadows a model version or releases it as a canary. Afterwards it moves the `champion` alias |
+| `_terraform.yml`, `_release.yml`, `_bundle.yml`, `_model-promote.yml` | Called by the workflows above | One environment each |
+
+**Live environments.** Merges deploy only to environments listed in the repository variable `LIVE_ENVIRONMENTS` (comma-separated, for example `dev,test`), because an environment needs its infrastructure and add-ons first. It is `none` until the first environment is created. Running a workflow by hand ignores it, which is how an environment is created the first time.
 
 ### Model promotion gates
 
-`azure-pipelines/scripts/check_model_gates.py` reads Unity Catalog model version tags. The Databricks validation jobs must write them.
+`.github/scripts/check_model_gates.py` reads Unity Catalog model version tags. The Databricks validation jobs must write them.
 
 | Gate | Tags | Pass when |
 |---|---|---|
@@ -153,93 +158,84 @@ Canary analysis queries in-cluster Prometheus:
 
 ## First-time setup
 
+Steps 1 to 3 are done for this repository (19 November 2026), in the `dev` subscription. Only setup exists: no environment infrastructure has been applied yet.
+
 ### 1. Shared Azure resources
 
 As an Azure administrator:
 
 ```bash
-./infra/bootstrap.sh <prefix>      # 3 to 8 lowercase letters or digits
+ACR_SKU=Standard ./infra/bootstrap.sh <prefix>      # 3 to 8 lowercase letters or digits
 ```
+
+This creates `rg-fraudshield-shared` with the Terraform state account and the shared registry. Standard is enough while only dev and test exist. Before perf or prod, upgrade the registry with `az acr update --name <registry> --sku Premium` and run the script again, which adds the replica in UK West.
+
+Here: prefix `zynx`, state account `zynxfsstate`, registry `zynxfsacr` (Standard), UK South.
 
 ### 2. Entra ID
 
-- App registration **fraudshield-api**: Application ID URI `api://<client ID>`, scope `access_as_user`, `accessTokenAcceptedVersion: 2`, and the eight app roles above. After the first apply, assign `DECISION_ENGINE` to the decision service's managed identity (`id-fraudshield-<env>-decision`).
-- App registration **fraudshield-portal**: single-page application, granted `access_as_user`. Add the portal URL as a redirect URI.
-- A group to administer Azure SQL. SQL authentication is disabled. After the first apply, it runs `CREATE USER [id-fraudshield-<env>-case] FROM EXTERNAL PROVIDER` (and the same for strategy) with read, write, and DDL rights for Flyway.
+- App registration **fraudshield-api**: Application ID URI `api://<client ID>`, scope `access_as_user`, version 2 access tokens, and the eight app roles above. `CHANNEL` and `DECISION_ENGINE` are for applications; the rest are for people. After the first apply, assign `DECISION_ENGINE` to the decision service's managed identity (`id-fraudshield-<env>-decision`).
+- App registration **fraudshield-portal**: single-page application, pre-authorised for `access_as_user`. Add the portal URL as a redirect URI after the first apply (it has `http://localhost:4200` for now).
+- Group **sg-fraudshield-sql-admins** to administer Azure SQL. SQL authentication is disabled. After the first apply, run `CREATE USER [id-fraudshield-<env>-case] FROM EXTERNAL PROVIDER` (and the same for strategy) with read, write, and DDL rights for Flyway.
+- App registration **fraudshield-github-deploy**: the identity GitHub Actions signs in as. It has a federated credential for each GitHub environment in step 3. This repository uses immutable OIDC subjects, so each subject is `repo:zynx-technologies@332030549/FraudShield@1458166839:environment:<environment name>` (find the prefix with `gh api repos/<owner>/<repo>/actions/oidc/customization/sub`).
 - Optional: groups for AKS cluster admin. Use PIM-activated groups in production.
 
-### 3. Azure DevOps
+Roles for **fraudshield-github-deploy**:
 
-1. Push this folder as the root of a repository.
-2. Create the service connection `fraudshield-azure` with workload identity federation. Give its identity:
-   - **Owner** on each environment subscription, or **Contributor** plus **Role Based Access Control Administrator** (Terraform creates role assignments)
-   - **Storage Blob Data Contributor** on the state account
-   - **AcrPush** and **Contributor** on the shared registry (`az acr import`)
-3. Give **Project Build Service** *Contribute* and *Create branch* on the repository, so pipelines can write to `releases`. Deny *Contribute* on `releases` to everyone else.
-4. Create variable groups.
+| Role | Scope | Why |
+|---|---|---|
+| Storage Blob Data Contributor | State account | Terraform state |
+| AcrPush and Contributor | Shared registry | Push images, and import third-party images (`az acr import`) |
+| Reader | Environment subscription | Plans can run |
+| Contributor and Role Based Access Control Administrator (or Owner) | Environment subscription | **Not granted yet.** Needed to apply infrastructure, because Terraform creates resources and role assignments. Grant it when you decide which subscription an environment uses |
 
-   **`fraudshield-shared`** holds the values printed by `bootstrap.sh`, plus `GITOPS_REPO_URL` (the repository's HTTPS clone URL).
+### 3. GitHub
 
-   **`fraudshield-dev`, `-test`, `-perf`, `-prod`:**
+GitHub reads workflows only from the repository root, so `FraudShield` is the root of the repository.
 
-   | Variable | Example | Notes |
-   |---|---|---|
-   | `APIM_PUBLISHER_EMAIL` | `fraud-platform@bank.example` | |
-   | `SQL_ADMIN_GROUP_NAME` | `sg-fraudshield-sql-admins` | |
-   | `SQL_ADMIN_GROUP_OBJECT_ID` | `0000…` | |
-   | `CHANNEL_SOURCE_CIDRS` | `["10.10.0.0/16"]` | Payment switch ranges. Use `[]` in dev |
-   | `AKS_ADMIN_GROUP_OBJECT_IDS` | `[]` | |
-   | `ALERT_EMAILS` | `["oncall@bank.example"]` | |
-   | `ENTRA_API_CLIENT_ID` | `0000…` | fraudshield-api client ID |
-   | `ENTRA_SPA_CLIENT_ID` | `0000…` | fraudshield-portal client ID |
-   | `ORIGIN_HOST_NAME` | `portal-origin.fraudshield.bank.example` | Leave empty, with the next one, to skip the edge |
-   | `ORIGIN_CERTIFICATE_SECRET_ID` | `https://kv-….vault.azure.net/secrets/origin` | Versionless |
-   | `AKS_CLUSTERS` | `rg-fraudshield-dev-uks/aks-fraudshield-dev-uks` | `infra.yml` prints this after the first apply |
-   | `GITOPS_REPO_TOKEN` | *(secret)* | Read-only token that Argo CD uses for this repository |
-   | `DATABRICKS_HOST` | `https://adb-….azuredatabricks.net` | `databricks_workspace_url` output |
+**Repository variables:** `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, the five values printed by `bootstrap.sh` (`UNIQUE_PREFIX`, `TF_STATE_RESOURCE_GROUP`, `TF_STATE_STORAGE_ACCOUNT`, `ACR_NAME`, `ACR_RESOURCE_GROUP`), `GITOPS_REPO_URL` (the repository's HTTPS clone URL), and `LIVE_ENVIRONMENTS`. An environment can override `AZURE_SUBSCRIPTION_ID` if it uses its own subscription. No secrets are needed while the repository is public; if it becomes private, add a read-only `GITOPS_REPO_TOKEN` secret for Argo CD.
 
-5. Create environments `fraudshield-dev`, `-test`, `-perf`, and `-prod`. Add approvers to perf and prod. Prod approvers must not be the change author.
-6. Create one pipeline for each YAML file in `azure-pipelines`, and make `ci.yml` a required check on `main`.
-7. For prod: create the agent pool `fraudshield-private` inside the network (Managed DevOps Pool). The prod Databricks workspace is private, and `databricks.yml` and `model-release.yml` need it.
+**Environments** (all limited to `main`):
+
+| Environment | Used by | Set up |
+|---|---|---|
+| `fraudshield-build` | App: build and push images | No variables |
+| `fraudshield-dev-plan`, `-test-plan`, `-perf-plan`, `-prod-plan` | Terraform plan | The Terraform inputs below. No reviewers |
+| `fraudshield-dev`, `-test` | Terraform apply, platform, app releases, Databricks, model promotion | Variables `AKS_CLUSTERS` (printed by the first apply) and `DATABRICKS_HOST` (`databricks_workspace_url` output) |
+| `fraudshield-perf`, `-prod` | As above | Same variables. Required reviewers, who cannot approve their own change |
+| `fraudshield-models` | Model release gates and the `champion` alias | Variable `DATABRICKS_HOST` (production workspace). The identity needs access to the Unity Catalog models |
+
+**Terraform inputs** on each `-plan` environment:
+
+| Variable | Example | Notes |
+|---|---|---|
+| `APIM_PUBLISHER_EMAIL` | `fraud-platform@bank.example` | |
+| `SQL_ADMIN_GROUP_NAME` | `sg-fraudshield-sql-admins` | |
+| `SQL_ADMIN_GROUP_OBJECT_ID` | `0000…` | |
+| `CHANNEL_SOURCE_CIDRS` | `["10.10.0.0/16"]` | Payment switch ranges. Use `[]` in dev |
+| `AKS_ADMIN_GROUP_OBJECT_IDS` | `[]` | |
+| `ALERT_EMAILS` | `["oncall@bank.example"]` | |
+| `ENTRA_API_CLIENT_ID` | `0000…` | fraudshield-api client ID |
+| `ENTRA_SPA_CLIENT_ID` | `0000…` | fraudshield-portal client ID |
+| `ORIGIN_HOST_NAME` | `portal-origin.fraudshield.bank.example` | Leave empty, with the next one, to skip the edge |
+| `ORIGIN_CERTIFICATE_SECRET_ID` | `https://kv-….vault.azure.net/secrets/origin` | Versionless |
+
+Empty lists default to `[]`. The four `-plan` environments are filled in, with `APIM_PUBLISHER_EMAIL` set to a placeholder mailbox; change it to a monitored address before the first apply.
+
+**Branches:** make the CI jobs required checks on `main`. Let GitHub Actions write the `releases` branch and nobody else; the workflows use `GITHUB_TOKEN` with `contents: write`, and its pushes do not start other workflows.
+
+**Private runners:** register self-hosted runners labelled `fraudshield-private` inside the network (data spoke), with Python 3 and the Azure CLI. The production Databricks workspace is private, and its deployment runs there.
+
+The Terraform plan is uploaded as a one-day artifact, because it can contain sensitive values. Reviewers read the plan summary on the run page before approving the apply. **While the repository is public, workflow logs and plan summaries are public too**, so make it private before planning real environments.
 
 ### 4. First deployment of an environment
 
-1. Run **infra** (the first apply takes about 1 to 2 hours, mostly API Management). Set `AKS_CLUSTERS` from its output.
-2. Run **platform** for that environment.
-3. Grant the case and strategy identities access to Azure SQL, and assign `DECISION_ENGINE` to the decision identity (see step 2).
-4. Run **app**. It builds decision, case, strategy, copilot, and portal, and releases them to dev and test.
-5. When the origin certificate is in Key Vault, set the two `ORIGIN_*` variables and run **infra** again to create Front Door.
-
-## GitHub Actions (infrastructure and model releases)
-
-`.github/workflows` has GitHub Actions versions of `infra.yml` and `model-release.yml`. They behave the same way and use the same scripts in `azure-pipelines/scripts`, which detect which system they run in. **Run each pipeline from one system only.** Both use the same Terraform state and the same `releases` branch.
-
-| Workflow | Runs when | What it does |
-|---|---|---|
-| `infra.yml` (Infrastructure) | Merges that change `infra/terraform`, or by hand | Plan and apply for dev, then test. Perf and prod only when chosen. Prod runs after perf if both are chosen |
-| `model-release.yml` (Model release) | By hand | Gates, then shadow or canary release through dev, test, perf, and prod, then the `champion` alias |
-| `_terraform.yml`, `_model-promote.yml` | Called by the two above | One environment each |
-
-GitHub reads workflows only from the repository root, so `FraudShield` must be the root of the repository.
-
-### Set up GitHub
-
-1. Create a Microsoft Entra application for GitHub, with the same Azure roles as the Azure DevOps service connection. Add a federated credential for each GitHub environment below, with the subject `repo:<owner>/<repo>:environment:<environment name>`.
-2. Create these environments:
-
-   | Environment | Used by | Set up |
-   |---|---|---|
-   | `fraudshield-dev-plan`, `-test-plan`, `-perf-plan`, `-prod-plan` | Terraform plan | The Terraform input variables in the next table. No reviewers |
-   | `fraudshield-dev`, `-test`, `-perf`, `-prod` | Terraform apply and model promotion | Restrict to `main`. Add required reviewers to perf and prod; prod reviewers must not be the change author. Variable `AKS_CLUSTERS` |
-   | `fraudshield-models` | Gate check and champion alias | Restrict to `main`. Variable `DATABRICKS_HOST` (production workspace). The identity needs access to the Unity Catalog models |
-
-   Terraform input variables for each `-plan` environment: `APIM_PUBLISHER_EMAIL`, `SQL_ADMIN_GROUP_NAME`, `SQL_ADMIN_GROUP_OBJECT_ID`, `CHANNEL_SOURCE_CIDRS`, `AKS_ADMIN_GROUP_OBJECT_IDS`, `ALERT_EMAILS`, `ORIGIN_HOST_NAME`, `ORIGIN_CERTIFICATE_SECRET_ID`, `ENTRA_API_CLIENT_ID`, `ENTRA_SPA_CLIENT_ID`. They have the same meaning as in the Azure DevOps table above. Empty lists default to `[]`.
-
-3. Add repository variables: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, and the five values printed by `bootstrap.sh` (`UNIQUE_PREFIX`, `TF_STATE_RESOURCE_GROUP`, `TF_STATE_STORAGE_ACCOUNT`, `ACR_NAME`, `ACR_RESOURCE_GROUP`). An environment can override `AZURE_SUBSCRIPTION_ID` if it uses its own subscription. No secrets are needed.
-4. Let the workflows write the `releases` branch. Protect `releases` so that only GitHub Actions can push to it. The workflows use `GITHUB_TOKEN` with `contents: write`, and its pushes do not start other workflows.
-5. Register self-hosted runners with the label `fraudshield-private` inside the network (data spoke), with Python 3 and the Azure CLI. The production Databricks workspace is private.
-
-The Terraform plan is uploaded as a one-day artifact, because it can contain sensitive values. Reviewers read the plan summary on the run page before approving the apply.
+1. Grant **fraudshield-github-deploy** Contributor and Role Based Access Control Administrator on the environment's subscription, and set `AZURE_SUBSCRIPTION_ID` on its GitHub environments if it is not the repository default.
+2. Run **Infrastructure** by hand (the first apply takes about 1 to 2 hours, mostly API Management). Set `AKS_CLUSTERS` and `DATABRICKS_HOST` on the environment from its output.
+3. Run **Platform** by hand for that environment.
+4. Grant the case and strategy identities access to Azure SQL, and assign `DECISION_ENGINE` to the decision identity (see step 2).
+5. Add the environment to `LIVE_ENVIRONMENTS` (for example `dev`), then run **App** by hand. It builds decision, case, strategy, copilot, and portal, and releases them.
+6. When the origin certificate is in Key Vault, set the two `ORIGIN_*` variables and run **Infrastructure** again to create Front Door.
 
 ## Differences from the design, and why
 

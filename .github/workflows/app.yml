@@ -1,0 +1,138 @@
+# Services and portal. Runs CI, builds every image once on the runner, scans it, and pushes it to the
+# shared registry. Then it promotes the same tag through each environment via the releases branch; Argo CD
+# deploys it and Argo Rollouts runs the canary.
+#
+# Only environments listed in the repository variable LIVE_ENVIRONMENTS (for example "dev,test") are
+# released, because an environment needs its infrastructure and platform add-ons first. Perf and prod also
+# need "Release to perf and production" when started by hand, and prod needs its reviewers.
+name: App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - services/**
+      - portal/**
+      - deploy/helm/**
+      - .github/workflows/app.yml
+      - .github/workflows/_release.yml
+  workflow_dispatch:
+    inputs:
+      release_to_production:
+        description: Release to perf and production after test
+        type: boolean
+        default: false
+
+concurrency:
+  group: app-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TRIVY_VERSION: 0.58.1
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  images:
+    name: Build, scan, and push images
+    needs: ci
+    runs-on: ubuntu-24.04
+    environment: fraudshield-build
+    timeout-minutes: 60
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: tag
+        run: echo "tag=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # Images are built on the runner, not with ACR Tasks, which some subscription types cannot run.
+      - name: Build, scan, and push
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          az acr login --name "$ACR_NAME"
+          REGISTRY="$ACR_NAME.azurecr.io"
+          build() {
+            local name="$1"; shift
+            local image="$REGISTRY/fraudshield-$name:$TAG"
+            docker build --platform linux/amd64 -t "$image" "$@"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "aquasec/trivy:$TRIVY_VERSION" image \
+              --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 "$image"
+            docker push "$image"
+          }
+          # Every Java service builds from one Dockerfile in the services folder (one Maven reactor).
+          for svc in decision case strategy copilot; do
+            build "$svc" --file services/Dockerfile --build-arg "SERVICE=$svc" services
+          done
+          build portal portal
+          echo "Pushed images tagged $TAG to $REGISTRY" >> "$GITHUB_STEP_SUMMARY"
+
+  dev:
+    needs: images
+    if: contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',dev,')
+    uses: ./.github/workflows/_release.yml
+    permissions:
+      id-token: write
+      contents: write
+    with:
+      environment: dev
+      image_tag: ${{ needs.images.outputs.tag }}
+      timeout_minutes: 30
+
+  test:
+    needs: [images, dev]
+    if: >-
+      !cancelled() && needs.images.result == 'success'
+      && contains(fromJSON('["success", "skipped"]'), needs.dev.result)
+      && contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',test,')
+    uses: ./.github/workflows/_release.yml
+    permissions:
+      id-token: write
+      contents: write
+    with:
+      environment: test
+      image_tag: ${{ needs.images.outputs.tag }}
+      timeout_minutes: 45
+
+  perf:
+    needs: [images, test]
+    if: >-
+      !cancelled() && inputs.release_to_production && needs.test.result == 'success'
+      && contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',perf,')
+    uses: ./.github/workflows/_release.yml
+    permissions:
+      id-token: write
+      contents: write
+    with:
+      environment: perf
+      image_tag: ${{ needs.images.outputs.tag }}
+      timeout_minutes: 90
+
+  # The production canary pauses at 5% for 10 minutes and at 25% for 30 minutes, in each region.
+  prod:
+    needs: [images, perf]
+    if: >-
+      !cancelled() && inputs.release_to_production && needs.perf.result == 'success'
+      && contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',prod,')
+    uses: ./.github/workflows/_release.yml
+    permissions:
+      id-token: write
+      contents: write
+    with:
+      environment: prod
+      image_tag: ${{ needs.images.outputs.tag }}
+      timeout_minutes: 180

@@ -1,0 +1,72 @@
+# Databricks Asset Bundle: data pipelines, feature jobs, training, and monitoring (design section 8).
+# Validates and deploys dev, then test. Perf and prod run when chosen by hand. Only environments listed in
+# LIVE_ENVIRONMENTS are deployed, because each needs its workspace first. Prod's workspace has no public
+# access, so its job runs on the self-hosted runners labelled fraudshield-private inside the network.
+name: Databricks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - databricks/**
+      - .github/workflows/databricks.yml
+  workflow_dispatch:
+    inputs:
+      include_production:
+        description: Deploy perf and production after test
+        type: boolean
+        default: false
+
+concurrency:
+  group: databricks
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dev:
+    if: contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',dev,')
+    uses: ./.github/workflows/_bundle.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: dev
+
+  test:
+    needs: dev
+    if: >-
+      !cancelled() && contains(fromJSON('["success", "skipped"]'), needs.dev.result)
+      && contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',test,')
+    uses: ./.github/workflows/_bundle.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: test
+
+  perf:
+    needs: test
+    if: >-
+      !cancelled() && inputs.include_production && needs.test.result == 'success'
+      && contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',perf,')
+    uses: ./.github/workflows/_bundle.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: perf
+
+  prod:
+    needs: perf
+    if: >-
+      !cancelled() && inputs.include_production && needs.perf.result == 'success'
+      && contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',prod,')
+    uses: ./.github/workflows/_bundle.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: prod
+      private_runner: true

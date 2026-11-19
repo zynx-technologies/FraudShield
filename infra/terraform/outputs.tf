@@ -1,4 +1,4 @@
-# Read by azure-pipelines/scripts/publish-platform-values.sh after every apply. It writes one values file
+# Read by .github/scripts/publish-platform-values.sh after every apply. It writes one values file
 # per cluster to the "releases" branch, where Argo CD picks it up. No secrets are included.
 output "platform_values" {
   sensitive = true
@@ -32,8 +32,8 @@ output "platform_values" {
   }
 }
 
-# Space-separated "resource-group/cluster" pairs, for the AKS_CLUSTERS variable in the environment's
-# Azure DevOps variable group.
+# Space-separated "resource-group/cluster" pairs, for the AKS_CLUSTERS variable on the environment's
+# GitHub environment.
 output "aks_clusters" {
   value = join(" ", [for k, r in local.regions : "${azurerm_resource_group.region[k].name}/${module.aks[k].name}"])
 }

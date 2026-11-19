@@ -69,7 +69,7 @@ resource "azurerm_firewall_policy" "hub" {
 }
 
 # Egress allow-list for AKS. Container images come only from the shared registry and MCR. Third-party
-# images (Argo CD, Argo Rollouts, ingress-nginx) are imported into the registry by azure-pipelines/platform.yml.
+# images (Argo CD, Argo Rollouts, ingress-nginx) are imported into the registry by .github/scripts/install-platform.sh.
 resource "azurerm_firewall_policy_rule_collection_group" "aks" {
   name               = "aks-egress"
   firewall_policy_id = azurerm_firewall_policy.hub.id
@@ -130,8 +130,8 @@ resource "azurerm_firewall_policy_rule_collection_group" "aks" {
         "*.data.mcr.microsoft.com",
         "login.microsoftonline.com",
         "management.azure.com",
-        "dev.azure.com",
-        "*.dev.azure.com",
+        # Argo CD reads deployment state from the GitHub repository.
+        "github.com",
       ], var.extra_egress_fqdns)
       protocols {
         type = "Https"

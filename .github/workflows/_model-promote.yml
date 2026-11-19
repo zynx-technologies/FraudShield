@@ -47,10 +47,10 @@ jobs:
             expr=".model.version = \"$VERSION\" | .model.shadowVersion = \"\""
             expect="FRAUDSHIELD_MODEL_VERSION=$VERSION"
           fi
-          azure-pipelines/scripts/commit-release.sh "environments/$ENVIRONMENT/model.yaml" "$expr" \
+          .github/scripts/commit-release.sh "environments/$ENVIRONMENT/model.yaml" "$expr" \
             "$ACTION $MODEL v$VERSION in $ENVIRONMENT (run $GITHUB_RUN_ID)"
           # Config changes roll the pods, so the canary and its analysis run here too.
-          azure-pipelines/scripts/wait-for-rollout.sh config "$expect" 150 decision,scoring
+          .github/scripts/wait-for-rollout.sh config "$expect" 150 decision,scoring
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           MODEL: ${{ inputs.model }}

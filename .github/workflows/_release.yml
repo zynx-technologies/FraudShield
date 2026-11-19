@@ -1,0 +1,46 @@
+# Reusable: promotes one image tag to one environment by updating the releases branch, then waits until
+# Argo CD has synced and every Rollout is Healthy in every cluster. Canary analysis runs inside the
+# cluster, so a failing canary rolls itself back and this job fails.
+name: Release environment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      image_tag:
+        type: string
+        required: true
+      timeout_minutes:
+        type: number
+        default: 30
+
+jobs:
+  release:
+    name: Release to ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    environment: fraudshield-${{ inputs.environment }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      id-token: write
+      contents: write # writes release.yaml on the releases branch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Set the image tag and wait for the rollout
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          TIMEOUT: ${{ inputs.timeout_minutes }}
+          AKS_CLUSTERS: ${{ vars.AKS_CLUSTERS }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          .github/scripts/commit-release.sh "environments/$ENVIRONMENT/release.yaml" \
+            ".global.imageTag = \"$IMAGE_TAG\"" \
+            "Release $IMAGE_TAG to $ENVIRONMENT (run $GITHUB_RUN_ID)"
+          .github/scripts/wait-for-rollout.sh image "$IMAGE_TAG" "$TIMEOUT"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # After a Terraform apply, writes each cluster's platform values (endpoints, identities, ingress IP) to the
-# releases branch, and prints the AKS_CLUSTERS value for the environment's variable group.
+# releases branch, and prints the AKS_CLUSTERS value for the environment's GitHub environment variables.
 # Usage: publish-platform-values.sh <environment>   (run from infra/terraform after apply)
 set -euo pipefail
 
@@ -23,5 +23,5 @@ done
 CLUSTERS="$(terraform output -raw aks_clusters)"
 echo "AKS clusters: $CLUSTERS"
 if [[ "${AKS_CLUSTERS:-}" != "$CLUSTERS" ]]; then
-  ci_warning "Set AKS_CLUSTERS to \"$CLUSTERS\" for fraudshield-${ENVIRONMENT} (Azure DevOps variable group or GitHub environment variable)."
+  ci_warning "Set AKS_CLUSTERS to \"$CLUSTERS\" for fraudshield-${ENVIRONMENT} (GitHub environment variable)."
 fi

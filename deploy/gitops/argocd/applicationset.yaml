@@ -1,4 +1,4 @@
-# One Argo CD Application per service in this cluster. azure-pipelines/platform.yml fills in
+# One Argo CD Application per service in this cluster. .github/scripts/install-platform.sh fills in
 # __ENV__, __REGION__, and __REPO_URL__ when it installs this file.
 #
 # Configuration comes from main (reviewed by pull request). Release state - image tag, model version,

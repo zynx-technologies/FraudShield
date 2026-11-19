@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Terraform plan or apply for one environment, signed in with workload identity federation (no secrets).
-#   Azure Pipelines: run inside AzureCLI@2 with addSpnToEnvironment: true.
-#   GitHub Actions:  set ARM_CLIENT_ID, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID, and ARM_USE_OIDC=true, with
-#                    "id-token: write" permission. The provider requests the OIDC token itself.
+# Set ARM_CLIENT_ID, ARM_TENANT_ID, and ARM_SUBSCRIPTION_ID, and give the job "id-token: write" permission.
+# The provider requests the GitHub OIDC token itself.
 # Usage: terraform.sh plan <environment>
 #        terraform.sh apply <environment> <saved-plan-file>
 set -euo pipefail
@@ -14,17 +13,8 @@ SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=ci.sh
 . "$SCRIPTS/ci.sh"
 
-if ci_is_github; then
-  : "${ARM_CLIENT_ID:?}" "${ARM_TENANT_ID:?}" "${ARM_SUBSCRIPTION_ID:?}"
-  export ARM_USE_OIDC=true
-else
-  export ARM_CLIENT_ID="${servicePrincipalId:?Run with addSpnToEnvironment: true}"
-  export ARM_TENANT_ID="$tenantId"
-  ARM_SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
-  export ARM_SUBSCRIPTION_ID
-  export ARM_USE_OIDC=true
-  export ARM_OIDC_TOKEN="$idToken"
-fi
+: "${ARM_CLIENT_ID:?}" "${ARM_TENANT_ID:?}" "${ARM_SUBSCRIPTION_ID:?}"
+export ARM_USE_OIDC=true
 export TF_IN_AUTOMATION=1
 export TF_VAR_unique_prefix="${UNIQUE_PREFIX:?}"
 export TF_VAR_acr_name="${ACR_NAME:?}"

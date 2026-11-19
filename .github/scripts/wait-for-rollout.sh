@@ -7,7 +7,7 @@
 #        wait-for-rollout.sh config <KEY=value> <timeout-minutes> <rollout,rollout>
 #   image   every Rollout's pods run an image with this tag
 #   config  the listed Rollouts' ConfigMaps hold KEY=value (for example a model version)
-# AKS_CLUSTERS: space-separated "resource-group/cluster" pairs, from the environment variable group.
+# AKS_CLUSTERS: space-separated "resource-group/cluster" pairs, from the GitHub environment variable.
 set -euo pipefail
 
 MODE="$1"

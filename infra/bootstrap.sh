@@ -5,11 +5,15 @@
 #
 # Usage: ./infra/bootstrap.sh <prefix> [primary-location] [secondary-location]
 #   prefix: 3 to 8 lowercase letters or digits, the same value as unique_prefix in Terraform.
+#   ACR_SKU (environment, default Premium): Standard is enough while only dev and test exist. Premium is
+#   needed for the replica in the second region, so upgrade before perf or prod:
+#   az acr update --name <registry> --sku Premium, then rerun this script to add the replica.
 set -euo pipefail
 
 PREFIX="${1:?Give a short lowercase prefix, for example fsacme}"
 LOCATION="${2:-uksouth}"
 SECONDARY="${3:-ukwest}"
+ACR_SKU="${ACR_SKU:-Premium}"
 
 if [[ ! "$PREFIX" =~ ^[a-z][a-z0-9]{2,7}$ ]]; then
   echo "The prefix must be 3 to 8 lowercase letters or digits, starting with a letter." >&2
@@ -37,14 +41,14 @@ az acr replication create --registry "$ACR" --location "$SECONDARY" --output non
 
 cat <<EOF
 
-Done. Create the Azure DevOps variable group "fraudshield-shared" with:
+Done. Add these as GitHub repository variables:
   UNIQUE_PREFIX=$PREFIX
   TF_STATE_RESOURCE_GROUP=$RG
   TF_STATE_STORAGE_ACCOUNT=$STORAGE
   ACR_NAME=$ACR
   ACR_RESOURCE_GROUP=$RG
 
-Then give the pipeline identity:
+Then give the GitHub deploy identity:
   Storage Blob Data Contributor on $STORAGE
-  AcrPush on $ACR
+  AcrPush and Contributor on $ACR
 EOF

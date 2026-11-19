@@ -1,0 +1,82 @@
+# Cluster add-ons: namespace, internal ingress, Argo Rollouts, Prometheus, Argo CD, and the FraudShield
+# ApplicationSet. Run it by hand after the first infrastructure apply of an environment. Merges that change
+# deploy/platform or deploy/gitops/argocd reinstall them in the environments listed in LIVE_ENVIRONMENTS.
+name: Platform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - deploy/platform/**
+      - deploy/gitops/argocd/**
+      - .github/scripts/install-platform.sh
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        type: choice
+        options: [dev, test, perf, prod]
+        required: true
+
+concurrency:
+  group: platform
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  HELM_VERSION: v3.16.4
+
+jobs:
+  # By hand: only the chosen environment. On merge: only environments listed in LIVE_ENVIRONMENTS.
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      environments: ${{ steps.pick.outputs.environments }}
+    steps:
+      - id: pick
+        env:
+          CHOSEN: ${{ inputs.environment }}
+          LIVE: ${{ vars.LIVE_ENVIRONMENTS }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then list="$CHOSEN"; else list="$LIVE"; fi
+          json="$(jq -cn --arg list "$list" '$list | split(",") | map(select(. == "dev" or . == "test" or . == "perf" or . == "prod"))')"
+          echo "environments=$json" >> "$GITHUB_OUTPUT"
+          echo "Environments: $json"
+
+  install:
+    name: Platform add-ons in ${{ matrix.environment }}
+    needs: select
+    if: needs.select.outputs.environments != '[]'
+    strategy:
+      max-parallel: 1
+      matrix:
+        environment: ${{ fromJSON(needs.select.outputs.environments) }}
+    runs-on: ubuntu-24.04
+    environment: fraudshield-${{ matrix.environment }}
+    timeout-minutes: 60
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch release state
+        run: git fetch --quiet origin releases
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Install add-ons in each cluster
+        run: .github/scripts/install-platform.sh "${{ matrix.environment }}"
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          AKS_CLUSTERS: ${{ vars.AKS_CLUSTERS }}
+          GITOPS_REPO_URL: ${{ vars.GITOPS_REPO_URL }}
+          GITOPS_REPO_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
