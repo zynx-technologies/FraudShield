@@ -75,7 +75,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: shellcheck and Python syntax
         run: |
-          shellcheck .github/scripts/*.sh infra/bootstrap.sh
+          # -x follows the shared ci.sh, which each script sources from its own folder.
+          shellcheck -x -P SCRIPTDIR .github/scripts/*.sh infra/bootstrap.sh
           python3 -m py_compile .github/scripts/*.py
 
   services:
