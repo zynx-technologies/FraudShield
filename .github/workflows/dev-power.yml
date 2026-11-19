@@ -1,0 +1,69 @@
+# Stops dev's compute at 17:00 UK time every day, and starts it again by hand. Data services, API Management,
+# and networking keep running, so a start takes a few minutes. See .github/scripts/environment-power.sh.
+#
+# GitHub schedules run in UTC, so both 16:00 and 17:00 UTC are scheduled and only the run that falls at
+# 17:00 in London (16:00 UTC in summer, 17:00 UTC in winter) acts. Scheduled runs can start late when GitHub
+# is busy. Stopping twice is harmless.
+name: Dev start and stop
+
+on:
+  schedule:
+    - cron: "0 16 * * *"
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Start or stop dev
+        type: choice
+        options: [start, stop]
+        required: true
+
+# Never start and stop at the same time. A queued run waits for the one in progress.
+concurrency:
+  group: dev-power
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  power:
+    name: ${{ inputs.action || 'stop' }} dev
+    # Scheduled stops only once dev exists (LIVE_ENVIRONMENTS). By hand, always.
+    if: github.event_name == 'workflow_dispatch' || contains(format(',{0},', vars.LIVE_ENVIRONMENTS), ',dev,')
+    runs-on: ubuntu-24.04
+    environment: fraudshield-dev
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Decide
+        id: decide
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == schedule ]]; then
+            hour="$(TZ=Europe/London date +%H)"
+            if [[ "$hour" != 17 ]]; then
+              echo "It is ${hour}:00 in London, not 17:00. Nothing to do on this schedule."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.decide.outputs.skip == 'false'
+
+      - uses: azure/login@v2
+        if: steps.decide.outputs.skip == 'false'
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ${{ inputs.action || 'stop' }} dev
+        if: steps.decide.outputs.skip == 'false'
+        run: .github/scripts/environment-power.sh "$ACTION" dev
+        env:
+          ACTION: ${{ inputs.action || 'stop' }}
+          AKS_CLUSTERS: ${{ vars.AKS_CLUSTERS }}

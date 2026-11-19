@@ -49,8 +49,13 @@ jobs:
           fi
           .github/scripts/commit-release.sh "environments/$ENVIRONMENT/model.yaml" "$expr" \
             "$ACTION $MODEL v$VERSION in $ENVIRONMENT (run $GITHUB_RUN_ID)"
-          # Config changes roll the pods, so the canary and its analysis run here too.
-          .github/scripts/wait-for-rollout.sh config "$expect" 150 decision,scoring
+          if [[ "$(.github/scripts/compute-platform.sh "$ENVIRONMENT")" == container_apps ]]; then
+            # Container Apps (dev): apply the new model settings to the decision app. No canary.
+            .github/scripts/deploy-container-apps.sh "$ENVIRONMENT" 30
+          else
+            # Config changes roll the pods, so the canary and its analysis run here too.
+            .github/scripts/wait-for-rollout.sh config "$expect" 150 decision,scoring
+          fi
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           MODEL: ${{ inputs.model }}

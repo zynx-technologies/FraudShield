@@ -1,9 +1,23 @@
 # Azure API Management in internal VNet mode. It authenticates and throttles payment channels and the
 # portal, and routes to the AKS ingress. In perf and prod it runs in a second region as an additional
 # location (Premium). Design sections 3 and 11.
+#
+# In container_apps mode (low-cost dev) it runs in external VNet mode instead: it is the public entry point
+# for the portal and the API, and routes to the internal Container Apps environment.
 
 variable "name" {
   type = string
+}
+
+variable "virtual_network_type" {
+  description = "Internal (channels over ExpressRoute, portal through Application Gateway), or External (public gateway, dev on Container Apps)."
+  type        = string
+  default     = "Internal"
+
+  validation {
+    condition     = contains(["Internal", "External"], var.virtual_network_type)
+    error_message = "virtual_network_type must be Internal or External."
+  }
 }
 
 variable "location" {
@@ -95,7 +109,7 @@ resource "azurerm_api_management" "this" {
   publisher_email      = var.publisher_email
   sku_name             = var.sku_name
   zones                = length(var.zones) > 0 ? var.zones : null
-  virtual_network_type = "Internal"
+  virtual_network_type = var.virtual_network_type
   public_ip_address_id = azurerm_public_ip.primary.id
   min_api_version      = "2021-08-01"
   tags                 = var.tags
@@ -193,10 +207,11 @@ output "gateway_host" {
   value = trimprefix(azurerm_api_management.this.gateway_url, "https://")
 }
 
-# Private gateway address in each region, keyed like the regions map in the root module.
+# Private gateway address in each region, keyed like the regions map in the root module. Internal mode only:
+# in external mode the gateway has no private address, and this is empty.
 output "private_ips" {
-  value = merge(
+  value = var.virtual_network_type == "Internal" ? merge(
     { primary = azurerm_api_management.this.private_ip_addresses[0] },
     { for loc in azurerm_api_management.this.additional_location : "secondary" => loc.private_ip_addresses[0] }
-  )
+  ) : {}
 }

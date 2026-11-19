@@ -12,6 +12,10 @@
 set -euo pipefail
 
 ENVIRONMENT="$1"
+if [[ "$("$(dirname "$0")/compute-platform.sh" "$ENVIRONMENT")" == container_apps ]]; then
+  echo "$ENVIRONMENT runs on Container Apps: no cluster add-ons to install."
+  exit 0
+fi
 : "${ACR_NAME:?}" "${AKS_CLUSTERS:?}" "${GITOPS_REPO_URL:?}"
 GITOPS_REPO_TOKEN="${GITOPS_REPO_TOKEN:-}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

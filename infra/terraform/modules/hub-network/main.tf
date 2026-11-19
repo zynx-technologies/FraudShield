@@ -1,5 +1,8 @@
 # Regional hub: Azure Firewall for egress control, Bastion for admin access, and an optional ExpressRoute
 # gateway for the payment switch and core banking. Design section 11.
+#
+# The firewall and Bastion can be turned off for a low-cost environment (dev on Container Apps), where the
+# application spoke leaves through its own NAT gateway instead.
 
 locals {
   firewall_cidr = cidrsubnet(var.address_space, 4, 0)
@@ -39,6 +42,7 @@ resource "azurerm_subnet" "gateway" {
 # ---------- Azure Firewall ----------
 
 resource "azurerm_public_ip" "firewall" {
+  count               = var.firewall_enabled ? 1 : 0
   name                = "pip-${var.name}-fw"
   location            = var.location
   resource_group_name = var.resource_group_name
@@ -49,6 +53,7 @@ resource "azurerm_public_ip" "firewall" {
 }
 
 resource "azurerm_firewall_policy" "hub" {
+  count                    = var.firewall_enabled ? 1 : 0
   name                     = "afwp-${var.name}"
   location                 = var.location
   resource_group_name      = var.resource_group_name
@@ -71,8 +76,9 @@ resource "azurerm_firewall_policy" "hub" {
 # Egress allow-list for AKS. Container images come only from the shared registry and MCR. Third-party
 # images (Argo CD, Argo Rollouts, ingress-nginx) are imported into the registry by .github/scripts/install-platform.sh.
 resource "azurerm_firewall_policy_rule_collection_group" "aks" {
+  count              = var.firewall_enabled ? 1 : 0
   name               = "aks-egress"
-  firewall_policy_id = azurerm_firewall_policy.hub.id
+  firewall_policy_id = azurerm_firewall_policy.hub[0].id
   priority           = 200
 
   network_rule_collection {
@@ -142,31 +148,59 @@ resource "azurerm_firewall_policy_rule_collection_group" "aks" {
 }
 
 resource "azurerm_firewall" "hub" {
+  count               = var.firewall_enabled ? 1 : 0
   name                = "afw-${var.name}"
   location            = var.location
   resource_group_name = var.resource_group_name
   sku_name            = "AZFW_VNet"
   sku_tier            = var.firewall_sku
-  firewall_policy_id  = azurerm_firewall_policy.hub.id
+  firewall_policy_id  = azurerm_firewall_policy.hub[0].id
   zones               = var.zones
   tags                = var.tags
 
   ip_configuration {
     name                 = "primary"
     subnet_id            = azurerm_subnet.firewall.id
-    public_ip_address_id = azurerm_public_ip.firewall.id
+    public_ip_address_id = azurerm_public_ip.firewall[0].id
   }
 }
 
 resource "azurerm_monitor_diagnostic_setting" "firewall" {
+  count                          = var.firewall_enabled ? 1 : 0
   name                           = "to-log-analytics"
-  target_resource_id             = azurerm_firewall.hub.id
+  target_resource_id             = azurerm_firewall.hub[0].id
   log_analytics_workspace_id     = var.log_analytics_workspace_id
   log_analytics_destination_type = "Dedicated"
 
   enabled_log {
     category_group = "allLogs"
   }
+}
+
+# The firewall became optional. Existing environments keep their firewall under the new addresses.
+moved {
+  from = azurerm_public_ip.firewall
+  to   = azurerm_public_ip.firewall[0]
+}
+
+moved {
+  from = azurerm_firewall_policy.hub
+  to   = azurerm_firewall_policy.hub[0]
+}
+
+moved {
+  from = azurerm_firewall_policy_rule_collection_group.aks
+  to   = azurerm_firewall_policy_rule_collection_group.aks[0]
+}
+
+moved {
+  from = azurerm_firewall.hub
+  to   = azurerm_firewall.hub[0]
+}
+
+moved {
+  from = azurerm_monitor_diagnostic_setting.firewall
+  to   = azurerm_monitor_diagnostic_setting.firewall[0]
 }
 
 # ---------- Bastion ----------

@@ -15,8 +15,22 @@ variable "address_space" {
   type        = string
 }
 
+variable "compute_platform" {
+  description = "aks or container_apps. See the root variable of the same name."
+  type        = string
+  default     = "aks"
+}
+
 variable "firewall_private_ip" {
-  type = string
+  description = "Next hop for AKS egress. Null in container_apps mode."
+  type        = string
+  default     = null
+}
+
+variable "apim_public" {
+  description = "True when API Management runs in external VNet mode and takes HTTPS from the internet."
+  type        = bool
+  default     = false
 }
 
 variable "hub_vnet_id" {
