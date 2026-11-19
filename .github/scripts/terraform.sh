@@ -53,6 +53,10 @@ case "$ACTION" in
   apply)
     terraform apply -input=false -lock-timeout=10m "${PLAN_FILE:?}"
     "$SCRIPTS/publish-platform-values.sh" "$ENVIRONMENT"
+    # Argo CD picks up new platform values on AKS. On Container Apps, apply them to the apps here.
+    if [[ "$("$SCRIPTS/compute-platform.sh" "$ENVIRONMENT")" == container_apps ]]; then
+      "$SCRIPTS/deploy-container-apps.sh" "$ENVIRONMENT"
+    fi
     ;;
   *)
     echo "Unknown action $ACTION" >&2

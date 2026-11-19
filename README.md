@@ -40,6 +40,17 @@ Each region gets a /17: hub /22 at `+0.0`, application spoke /19 at `+32.0`, and
 
 **Perf and prod are expensive** (APIM Premium in two regions, Firewall Premium, Business Critical SQL, Event Hubs Premium). Scale perf down between test windows.
 
+**Dev is the low-cost layout** (`compute_platform = "container_apps"` in `env/dev.tfvars`), at roughly £300 to £450 a month instead of £1,500 to £2,000. It keeps the hub and spokes, private endpoints, per-service identities, and data stores, but:
+
+| Full layout (test, perf, prod) | Dev |
+|---|---|
+| Private AKS, Argo CD, Argo Rollouts canaries | Azure Container Apps (Consumption), one warm replica per app; releases replace the revision, with no canary |
+| Front Door Premium + WAF, Application Gateway | API Management Developer in external mode is the public entry point: `/api/v1/*` to the services, everything else to the portal |
+| Hub Azure Firewall for egress | NAT gateway on the Container Apps subnet |
+| Bastion | None. Use `az containerapp exec` and `az containerapp logs show` |
+
+Dev has no WAF, and its API Management gateway is reachable from the internet. Every service still requires an Entra token. Use synthetic data only.
+
 ## Application
 
 ### Services (Java 21, Spring Boot 4)
@@ -102,6 +113,13 @@ Portal users ──► Front Door + WAF ──► Application Gateway ─┬─ 
                                                             └─ /* ───────────► AKS internal ingress ──► portal
 ```
 
+Dev (Container Apps):
+
+```
+Portal users and test channels ──► API Management (external) ─┬─ /api/v1/* ──► Container Apps (internal) ──► services
+                                                              └─ /* ─────────► Container Apps (internal) ──► portal
+```
+
 - **Two paths.** The decision path (AKS, Redis, Cosmos DB, SQL, Event Hubs) does not depend on Databricks.
 - **Private only.** Every data service has public access disabled and is reached through private endpoints. Each region has its own private DNS zones, so a service always resolves to an endpoint in its own region.
 - **Egress control.** AKS traffic leaves only through Azure Firewall, which allows the shared registry, Microsoft endpoints, and `github.com` (Argo CD reads this repository). Third-party images are imported into the registry by the Platform workflow.
@@ -118,6 +136,8 @@ Argo CD reads two branches of this repository:
 
 Promoting a release is therefore a commit on `releases`. The pipelines then wait until every Rollout in every cluster is healthy. A breached canary limit rolls back in the cluster, and the pipeline stage fails.
 
+Dev has no Argo CD. There, `.github/scripts/deploy-container-apps.sh` reads the same three files and updates each app's image and environment variables (it mirrors the chart's `configmap.yaml`, so change both together). Release, model promotion, and every Terraform apply run it. A revision that never becomes ready gets no traffic, and the stage fails. `compute-platform.sh` tells the pipelines which way an environment deploys, from `computePlatform` in its platform values.
+
 ## Pipelines
 
 GitHub Actions only. Shared scripts live in `.github/scripts`.
@@ -128,6 +148,7 @@ GitHub Actions only. Shared scripts live in `.github/scripts`.
 | `infra.yml` (Infrastructure) | Merges to `infra/terraform`, or by hand | Plans, then applies the saved plan: dev, then test. Perf and prod only when chosen. Publishes platform values to `releases` |
 | `platform.yml` (Platform) | Changes to `deploy/platform` or `deploy/gitops/argocd`, or by hand | Installs cluster add-ons and the ApplicationSet in each cluster through `az aks command invoke` |
 | `app.yml` (App) | Merges to `services`, `portal`, or `deploy/helm`, or by hand | Runs CI, builds every image once on the runner, scans it with Trivy, pushes it, then releases dev, test, and, when chosen, perf and prod |
+| `dev-power.yml` (Dev start and stop) | 17:00 UK time every day, or by hand | Stops dev's compute (Container Apps, or AKS clusters before the move), so serverless SQL can pause too. Start it by hand. Data services, API Management, and networking keep running. A release while dev is stopped takes effect at the next start |
 | `databricks.yml` (Databricks) | Merges to `databricks`, or by hand | Validates and deploys the bundle per environment |
 | `model-release.yml` (Model release) | By hand | Checks the section 8 promotion gates, then either shadows a model version or releases it as a canary. Afterwards it moves the `champion` alias |
 | `_terraform.yml`, `_release.yml`, `_bundle.yml`, `_model-promote.yml` | Called by the workflows above | One environment each |
@@ -236,6 +257,10 @@ The Terraform plan is uploaded as a one-day artifact, because it can contain sen
 4. Grant the case and strategy identities access to Azure SQL, and assign `DECISION_ENGINE` to the decision identity (see step 2).
 5. Add the environment to `LIVE_ENVIRONMENTS` (for example `dev`), then run **App** by hand. It builds decision, case, strategy, copilot, and portal, and releases them.
 6. When the origin certificate is in Key Vault, set the two `ORIGIN_*` variables and run **Infrastructure** again to create Front Door.
+
+**Dev (Container Apps)** skips steps 3 and 6, needs no `AKS_CLUSTERS`, and ignores the `ORIGIN_*` variables. Until the first App run, each app runs a placeholder image. The portal is at the `portal_url` output (`https://<apim>.azure-api.net/`); add that address as a redirect URI on the fraudshield-portal app registration.
+
+**Moving an existing dev from AKS:** the next Infrastructure run deletes AKS, the firewall, Bastion, and the edge, switches API Management to external mode (about 45 minutes), creates the Container Apps, and then deploys the current release to them. Clear `AKS_CLUSTERS` on `fraudshield-dev` afterwards.
 
 ## Differences from the design, and why
 

@@ -90,6 +90,13 @@ jobs:
           name: tfplan-${{ inputs.environment }}
           path: ${{ runner.temp }}/tfplan
 
+      # Only for environments on Container Apps, where terraform.sh applies new platform values to the apps.
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
       - name: Terraform apply and publish platform values
         run: .github/scripts/terraform.sh apply "${{ inputs.environment }}" "$RUNNER_TEMP/tfplan/tfplan"
         env:

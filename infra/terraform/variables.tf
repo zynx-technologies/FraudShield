@@ -40,6 +40,26 @@ variable "address_space" {
   type        = string
 }
 
+variable "compute_platform" {
+  description = <<-EOT
+    aks: private AKS behind Front Door, Application Gateway, and internal API Management (test, perf, prod).
+    container_apps: low-cost dev. Container Apps, with API Management in external mode as the public entry
+    point, and no Front Door or Application Gateway. Single region only.
+  EOT
+  type        = string
+  default     = "aks"
+
+  validation {
+    condition     = contains(["aks", "container_apps"], var.compute_platform)
+    error_message = "compute_platform must be aks or container_apps."
+  }
+
+  validation {
+    condition     = var.compute_platform == "aks" || !var.multi_region
+    error_message = "container_apps supports a single region only."
+  }
+}
+
 variable "zones" {
   description = "Availability zones. UK West has none, so zonal settings apply only in regions that have them."
   type        = list(string)
@@ -64,6 +84,17 @@ variable "channel_source_cidrs" {
   default     = []
 }
 
+variable "firewall_enabled" {
+  description = "Hub Azure Firewall. AKS needs it for egress. In container_apps mode apps leave through a NAT gateway instead."
+  type        = bool
+  default     = true
+
+  validation {
+    condition     = var.firewall_enabled || var.compute_platform == "container_apps"
+    error_message = "AKS sends all egress through the firewall, so firewall_enabled can be false only with container_apps."
+  }
+}
+
 variable "firewall_sku" {
   type    = string
   default = "Standard"
@@ -79,7 +110,7 @@ variable "expressroute_gateway_enabled" {
   default = false
 }
 
-# ---------- AKS ----------
+# ---------- AKS (compute_platform = "aks" only) ----------
 
 variable "kubernetes_version" {
   type    = string
